@@ -7,7 +7,6 @@
 
 import Foundation
 
-@MainActor
 protocol NetworkService {
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
 }

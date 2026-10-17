@@ -7,7 +7,6 @@
 
 import Foundation
 
-@MainActor
 final class CatalogueService {
     private let repository: CatalogueRepository
 

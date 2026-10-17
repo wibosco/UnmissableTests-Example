@@ -8,7 +8,6 @@
 import Foundation
 
 /// Standin for actual network requests
-@MainActor
 final class InMemoryServer: NetworkService {
     private enum Route {
         case books

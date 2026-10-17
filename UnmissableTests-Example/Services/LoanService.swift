@@ -11,7 +11,6 @@ enum LoanError: Error, Equatable {
     case loanLimitReached
 }
 
-@MainActor
 final class LoanService {
     private let repository: CatalogueRepository
     private let now: () -> Date

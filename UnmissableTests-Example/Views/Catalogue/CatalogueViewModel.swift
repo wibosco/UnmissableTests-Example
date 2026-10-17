@@ -8,7 +8,6 @@
 import Foundation
 import Observation
 
-@MainActor
 @Observable
 final class CatalogueViewModel {
     struct Row: Identifiable, Equatable {

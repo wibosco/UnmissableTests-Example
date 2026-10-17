@@ -13,7 +13,6 @@ enum Availability: Equatable, Sendable {
     case onLoanToYou
 }
 
-@MainActor
 protocol CatalogueRepository {
     func catalogue() async throws(CatalogueError) -> [Listing]
     func loans() async throws(LoansError) -> [Loan]
@@ -42,7 +41,6 @@ enum CheckInError: Error, Equatable {
     case failed
 }
 
-@MainActor
 final class DefaultCatalogueRepository: CatalogueRepository {
     private let baseURL: URL
     private let networkService: NetworkService

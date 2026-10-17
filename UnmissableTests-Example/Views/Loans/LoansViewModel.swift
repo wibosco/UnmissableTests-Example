@@ -8,7 +8,6 @@
 import Foundation
 import Observation
 
-@MainActor
 @Observable
 final class LoansViewModel {
     struct Row: Identifiable, Equatable {
