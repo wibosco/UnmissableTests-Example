@@ -17,17 +17,21 @@ struct BookListView<Item, Detail: View>: View {
     private let title: String
     private let loadItems: () async throws -> [Item]
     private let bookKeyPath: KeyPath<Item, Book>
+    private let actions: (Item) -> [BookAction]
     private let detail: (Item) -> Detail
 
     @State private var state = LoadState.loading
+    @State private var actionError: (any Error)?
 
     init(title: String,
          loadItems: @escaping () async throws -> [Item],
          book bookKeyPath: KeyPath<Item, Book>,
+         actions: @escaping (Item) -> [BookAction],
          @ViewBuilder detail: @escaping (Item) -> Detail) {
         self.title = title
         self.loadItems = loadItems
         self.bookKeyPath = bookKeyPath
+        self.actions = actions
         self.detail = detail
     }
 
@@ -53,6 +57,16 @@ struct BookListView<Item, Detail: View>: View {
                             .font(.caption)
                     }
                 }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    ForEach(actions(item)) { action in
+                        Button(action.title, systemImage: action.systemImage) {
+                            Task {
+                                await perform(action)
+                            }
+                        }
+                        .tint(action.tint)
+                    }
+                }
             }
             .overlay {
                 switch state {
@@ -70,12 +84,25 @@ struct BookListView<Item, Detail: View>: View {
             }
             .navigationTitle(title)
             .task {
-                do {
-                    state = .loaded(try await loadItems())
-                } catch {
-                    state = .failed
-                }
+                await load()
             }
+            .alert("Something Went Wrong",
+                   isPresented: isShowingActionError,
+                   presenting: actionError) { _ in
+                Button("OK", role: .cancel) {}
+            } message: { error in
+                Text(error.localizedDescription)
+            }
+        }
+    }
+
+    // MARK: - Loading
+
+    private func load() async {
+        do {
+            state = .loaded(try await loadItems())
+        } catch {
+            state = .failed
         }
     }
 
@@ -95,6 +122,27 @@ struct BookListView<Item, Detail: View>: View {
             ]
 
             return comparisons.first { $0 != .orderedSame } == .orderedAscending
+        }
+    }
+
+    // MARK: - Actions
+
+    private func perform(_ action: BookAction) async {
+        do {
+            try await action.perform()
+            await load()
+        } catch {
+            actionError = error
+        }
+    }
+
+    private var isShowingActionError: Binding<Bool> {
+        Binding {
+            actionError != nil
+        } set: { isShowing in
+            if !isShowing {
+                actionError = nil
+            }
         }
     }
 }

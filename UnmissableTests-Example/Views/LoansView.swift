@@ -13,7 +13,8 @@ struct LoansView: View {
     var body: some View {
         BookListView(title: "Borrowed",
                      loadItems: loanService.loans,
-                     book: \.book) { loan in
+                     book: \.book,
+                     actions: { [.return($0.book, using: loanService)] }) { loan in
             if loanService.isOverdue(loan) {
                 Text("Overdue - was due \(loan.dueDate, format: .dateTime.day().month().year())")
                     .foregroundStyle(.red)

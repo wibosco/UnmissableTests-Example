@@ -11,7 +11,6 @@ enum LoanError: Error, Equatable {
     case alreadyBorrowed
     case loanLimitReached
     case onLoan
-    case reserved
     case invalidLoanPeriod
     case notBorrowed
 }
@@ -44,6 +43,7 @@ final class LoanService {
 
     // MARK: - Borrowing
 
+    @discardableResult
     func borrow(_ book: Book) async throws -> Loan {
         let currentLoans = try await repository.loans()
 
@@ -60,8 +60,8 @@ final class LoanService {
             break
         case .onLoan:
             throw LoanError.onLoan
-        case .reserved:
-            throw LoanError.reserved
+        case .onLoanToYou:
+            throw LoanError.alreadyBorrowed
         }
 
         let borrowedAt = now()
@@ -72,7 +72,9 @@ final class LoanService {
             throw LoanError.invalidLoanPeriod
         }
 
-        try await repository.checkOut(bookID: book.id)
+        try await repository.checkOut(bookID: book.id,
+                                      borrowedAt: borrowedAt,
+                                      dueDate: dueDate)
 
         return Loan(book: book,
                     borrowedAt: borrowedAt,
@@ -99,5 +101,22 @@ final class LoanService {
 
     func isOverdue(_ loan: Loan) -> Bool {
         now() > loan.dueDate
+    }
+}
+
+extension LoanError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .alreadyBorrowed:
+            "You already have this book on loan."
+        case .loanLimitReached:
+            "You've reached your loan limit. Return a book before borrowing another."
+        case .onLoan:
+            "This book is on loan to another member."
+        case .invalidLoanPeriod:
+            "A due date couldn't be worked out for this loan."
+        case .notBorrowed:
+            "You don't have this book on loan."
+        }
     }
 }

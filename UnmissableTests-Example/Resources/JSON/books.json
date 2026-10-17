@@ -19,7 +19,7 @@
     },
     "isbn": "9780141439518",
     "cover_image_name": "cover-pride-and-prejudice",
-    "availability": "reserved"
+    "availability": "on_loan"
   },
   {
     "id": "book-03",
@@ -30,7 +30,7 @@
     },
     "isbn": "9780141321028",
     "cover_image_name": "cover-the-wonderful-wizard-of-oz",
-    "availability": "on_loan"
+    "availability": "on_loan_to_you"
   },
   {
     "id": "book-04",
@@ -52,7 +52,7 @@
     },
     "isbn": "9780142437247",
     "cover_image_name": "cover-moby-dick",
-    "availability": "on_loan"
+    "availability": "on_loan_to_you"
   },
   {
     "id": "book-06",
@@ -74,7 +74,7 @@
     },
     "isbn": "9780141321004",
     "cover_image_name": "cover-treasure-island",
-    "availability": "available"
+    "availability": "on_loan"
   },
   {
     "id": "book-08",
@@ -96,7 +96,7 @@
     },
     "isbn": "9780141441146",
     "cover_image_name": "cover-jane-eyre",
-    "availability": "on_loan"
+    "availability": "on_loan_to_you"
   },
   {
     "id": "book-10",
@@ -107,7 +107,7 @@
     },
     "isbn": "9780141034324",
     "cover_image_name": "cover-the-hound-of-the-baskervilles",
-    "availability": "reserved"
+    "availability": "on_loan"
   },
   {
     "id": "book-11",
@@ -118,7 +118,7 @@
     },
     "isbn": "9780147514011",
     "cover_image_name": "cover-little-women",
-    "availability": "available"
+    "availability": "on_loan"
   },
   {
     "id": "book-12",
@@ -129,7 +129,7 @@
     },
     "isbn": "9780141439471",
     "cover_image_name": "cover-frankenstein",
-    "availability": "reserved"
+    "availability": "on_loan"
   },
   {
     "id": "book-13",
@@ -151,7 +151,7 @@
     },
     "isbn": "9780141321592",
     "cover_image_name": "cover-anne-of-green-gables",
-    "availability": "on_loan"
+    "availability": "on_loan_to_you"
   },
   {
     "id": "book-15",

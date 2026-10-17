@@ -10,20 +10,16 @@ import SwiftUI
 struct ContentView: View {
     let catalogueService: CatalogueService
     let loanService: LoanService
-    let reservationService: ReservationService
 
     var body: some View {
         TabView {
             Tab("All Books", systemImage: "books.vertical") {
-                CatalogueView(catalogueService: catalogueService)
+                CatalogueView(catalogueService: catalogueService,
+                              loanService: loanService)
             }
 
             Tab("Borrowed", systemImage: "book") {
                 LoansView(loanService: loanService)
-            }
-
-            Tab("Reserved", systemImage: "bookmark") {
-                ReservationsView(reservationService: reservationService)
             }
         }
     }
@@ -37,6 +33,5 @@ struct ContentView: View {
                                          loanLimit: 5,
                                          loanPeriodInDays: 21,
                                          calendar: .current,
-                                         now: Date.init),
-                reservationService: ReservationService(repository: repository))
+                                         now: Date.init))
 }
