@@ -1,0 +1,167 @@
+[
+  {
+    "id": "book-01",
+    "title": "Dracula",
+    "author": {
+      "first_name": "Bram",
+      "last_name": "Stoker"
+    },
+    "isbn": "9780141439846",
+    "cover_image_name": "cover-dracula",
+    "availability": "available"
+  },
+  {
+    "id": "book-02",
+    "title": "Pride and Prejudice",
+    "author": {
+      "first_name": "Jane",
+      "last_name": "Austen"
+    },
+    "isbn": "9780141439518",
+    "cover_image_name": "cover-pride-and-prejudice",
+    "availability": "reserved"
+  },
+  {
+    "id": "book-03",
+    "title": "The Wonderful Wizard of Oz",
+    "author": {
+      "first_name": "L. Frank",
+      "last_name": "Baum"
+    },
+    "isbn": "9780141321028",
+    "cover_image_name": "cover-the-wonderful-wizard-of-oz",
+    "availability": "on_loan"
+  },
+  {
+    "id": "book-04",
+    "title": "Wuthering Heights",
+    "author": {
+      "first_name": "Emily",
+      "last_name": "Brontë"
+    },
+    "isbn": "9780141439556",
+    "cover_image_name": "cover-wuthering-heights",
+    "availability": "available"
+  },
+  {
+    "id": "book-05",
+    "title": "Moby-Dick",
+    "author": {
+      "first_name": "Herman",
+      "last_name": "Melville"
+    },
+    "isbn": "9780142437247",
+    "cover_image_name": "cover-moby-dick",
+    "availability": "on_loan"
+  },
+  {
+    "id": "book-06",
+    "title": "Emma",
+    "author": {
+      "first_name": "Jane",
+      "last_name": "Austen"
+    },
+    "isbn": "9780141439587",
+    "cover_image_name": "cover-emma",
+    "availability": "available"
+  },
+  {
+    "id": "book-07",
+    "title": "Treasure Island",
+    "author": {
+      "first_name": "Robert Louis",
+      "last_name": "Stevenson"
+    },
+    "isbn": "9780141321004",
+    "cover_image_name": "cover-treasure-island",
+    "availability": "available"
+  },
+  {
+    "id": "book-08",
+    "title": "Alice's Adventures in Wonderland",
+    "author": {
+      "first_name": "Lewis",
+      "last_name": "Carroll"
+    },
+    "isbn": "9780141439761",
+    "cover_image_name": "cover-alices-adventures-in-wonderland",
+    "availability": "available"
+  },
+  {
+    "id": "book-09",
+    "title": "Jane Eyre",
+    "author": {
+      "first_name": "Charlotte",
+      "last_name": "Brontë"
+    },
+    "isbn": "9780141441146",
+    "cover_image_name": "cover-jane-eyre",
+    "availability": "on_loan"
+  },
+  {
+    "id": "book-10",
+    "title": "The Hound of the Baskervilles",
+    "author": {
+      "first_name": "Arthur Conan",
+      "last_name": "Doyle"
+    },
+    "isbn": "9780141034324",
+    "cover_image_name": "cover-the-hound-of-the-baskervilles",
+    "availability": "reserved"
+  },
+  {
+    "id": "book-11",
+    "title": "Little Women",
+    "author": {
+      "first_name": "Louisa May",
+      "last_name": "Alcott"
+    },
+    "isbn": "9780147514011",
+    "cover_image_name": "cover-little-women",
+    "availability": "available"
+  },
+  {
+    "id": "book-12",
+    "title": "Frankenstein",
+    "author": {
+      "first_name": "Mary",
+      "last_name": "Shelley"
+    },
+    "isbn": "9780141439471",
+    "cover_image_name": "cover-frankenstein",
+    "availability": "reserved"
+  },
+  {
+    "id": "book-13",
+    "title": "The Secret Garden",
+    "author": {
+      "first_name": "Frances Hodgson",
+      "last_name": "Burnett"
+    },
+    "isbn": "9780141321066",
+    "cover_image_name": "cover-the-secret-garden",
+    "availability": "available"
+  },
+  {
+    "id": "book-14",
+    "title": "Anne of Green Gables",
+    "author": {
+      "first_name": "L.M.",
+      "last_name": "Montgomery"
+    },
+    "isbn": "9780141321592",
+    "cover_image_name": "cover-anne-of-green-gables",
+    "availability": "on_loan"
+  },
+  {
+    "id": "book-15",
+    "title": "The War of the Worlds",
+    "author": {
+      "first_name": "H.G.",
+      "last_name": "Wells"
+    },
+    "isbn": "9780141441030",
+    "cover_image_name": "cover-the-war-of-the-worlds",
+    "availability": "available"
+  }
+]

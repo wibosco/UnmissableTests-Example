@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "cover-little-women.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

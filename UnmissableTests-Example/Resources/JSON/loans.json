@@ -1,0 +1,22 @@
+[
+  {
+    "book_id": "book-03",
+    "borrowed_at": "2026-10-06T10:15:00Z",
+    "due_date": "2026-10-27T10:15:00Z"
+  },
+  {
+    "book_id": "book-05",
+    "borrowed_at": "2026-09-15T14:30:00Z",
+    "due_date": "2026-10-06T14:30:00Z"
+  },
+  {
+    "book_id": "book-09",
+    "borrowed_at": "2026-10-10T09:00:00Z",
+    "due_date": "2026-10-31T09:00:00Z"
+  },
+  {
+    "book_id": "book-14",
+    "borrowed_at": "2026-10-14T16:45:00Z",
+    "due_date": "2026-11-04T16:45:00Z"
+  }
+]
