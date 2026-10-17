@@ -15,7 +15,7 @@ enum Availability: Equatable, Sendable {
 
 @MainActor
 protocol CatalogueRepository {
-    func catalogue() async throws -> [CatalogueEntry]
+    func catalogue() async throws -> [Listing]
     func availability(ofBookWithID bookID: String) async throws -> Availability
     func loans() async throws -> [Loan]
     func checkOut(bookID: String,
@@ -32,7 +32,7 @@ enum CatalogueRepositoryError: Error, Equatable {
 @MainActor
 final class DefaultCatalogueRepository: CatalogueRepository {
     private struct Store {
-        var entries: [CatalogueEntry]
+        var listings: [Listing]
         var loans: [Loan]
     }
 
@@ -41,7 +41,9 @@ final class DefaultCatalogueRepository: CatalogueRepository {
 
     // Changes are held in memory to stand in for the server, so they're lost when the app restarts.
     private var store: Store?
-
+    
+    // MARK: - Init
+    
     init(bundle: Bundle) {
         self.bundle = bundle
 
@@ -53,16 +55,16 @@ final class DefaultCatalogueRepository: CatalogueRepository {
 
     // MARK: - Catalogue
 
-    func catalogue() async throws -> [CatalogueEntry] {
-        try loadedStore().entries
+    func catalogue() async throws -> [Listing] {
+        try loadedStore().listings
     }
 
     func availability(ofBookWithID bookID: String) async throws -> Availability {
-        guard let entry = try loadedStore().entries.first(where: { $0.book.id == bookID }) else {
+        guard let listing = try loadedStore().listings.first(where: { $0.book.id == bookID }) else {
             throw CatalogueRepositoryError.unknownBook(bookID)
         }
 
-        return entry.availability
+        return listing.availability
     }
 
     // MARK: - Loans
@@ -80,7 +82,7 @@ final class DefaultCatalogueRepository: CatalogueRepository {
                             forBookWithID: bookID,
                             in: &store)
         store.loans.append(Loan(book: try book(withID: bookID,
-                                               in: store.entries.map(\.book)),
+                                               in: store.listings.map(\.book)),
                                 borrowedAt: borrowedAt,
                                 dueDate: dueDate))
 
@@ -97,7 +99,10 @@ final class DefaultCatalogueRepository: CatalogueRepository {
 
         self.store = store
     }
+}
 
+/// Standin for actual network requests
+private extension DefaultCatalogueRepository {
     // MARK: - Store
 
     private func loadedStore() throws -> Store {
@@ -105,20 +110,20 @@ final class DefaultCatalogueRepository: CatalogueRepository {
             return store
         }
 
-        let bookResponses: [BookResponse] = try load("books")
-        let loanResponses: [LoanResponse] = try load("loans")
+        let bookDTOs: [BookDTO] = try load("books")
+        let loanDTOs: [LoanDTO] = try load("loans")
 
-        let entries = bookResponses.map(\.entry)
-        let books = entries.map(\.book)
+        let listings = bookDTOs.map(\.listing)
+        let books = listings.map(\.book)
 
-        let loans = try loanResponses.map { response in
+        let loans = try loanDTOs.map { response in
             Loan(book: try book(withID: response.bookId,
                                 in: books),
                  borrowedAt: response.borrowedAt,
                  dueDate: response.dueDate)
         }
 
-        let store = Store(entries: entries,
+        let store = Store(listings: listings,
                           loans: loans)
         self.store = store
 
@@ -128,12 +133,12 @@ final class DefaultCatalogueRepository: CatalogueRepository {
     private func setAvailability(_ availability: Availability,
                                  forBookWithID bookID: String,
                                  in store: inout Store) throws {
-        guard let index = store.entries.firstIndex(where: { $0.book.id == bookID }) else {
+        guard let index = store.listings.firstIndex(where: { $0.book.id == bookID }) else {
             throw CatalogueRepositoryError.unknownBook(bookID)
         }
 
-        store.entries[index] = CatalogueEntry(book: store.entries[index].book,
-                                              availability: availability)
+        store.listings[index] = Listing(book: store.listings[index].book,
+                                        availability: availability)
     }
 
     private func book(withID bookID: String,
@@ -156,55 +161,4 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         return try decoder.decode(T.self,
                                   from: data)
     }
-}
-
-private struct BookResponse: Decodable {
-    enum Status: String, Decodable {
-        case available
-        case onLoan = "on_loan"
-        case onLoanToYou = "on_loan_to_you"
-    }
-
-    struct AuthorResponse: Decodable {
-        let firstName: String
-        let lastName: String
-    }
-
-    let id: String
-    let title: String
-    let author: AuthorResponse
-    let isbn: String
-    let coverImageName: String
-    let availability: Status
-
-    var entry: CatalogueEntry {
-        CatalogueEntry(book: book,
-                       availability: mappedAvailability)
-    }
-
-    private var book: Book {
-        Book(id: id,
-             title: title,
-             author: Author(firstName: author.firstName,
-                            lastName: author.lastName),
-             isbn: isbn,
-             coverImageName: coverImageName)
-    }
-
-    private var mappedAvailability: Availability {
-        switch availability {
-        case .available:
-            .available
-        case .onLoan:
-            .onLoan
-        case .onLoanToYou:
-            .onLoanToYou
-        }
-    }
-}
-
-private struct LoanResponse: Decodable {
-    let bookId: String
-    let borrowedAt: Date
-    let dueDate: Date
 }

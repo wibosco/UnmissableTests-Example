@@ -15,7 +15,7 @@ final class CatalogueService {
         self.repository = repository
     }
 
-    func catalogue() async throws -> [CatalogueEntry] {
+    func catalogue() async throws -> [Listing] {
         try await repository.catalogue()
     }
 }

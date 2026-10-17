@@ -103,20 +103,3 @@ final class LoanService {
         now() > loan.dueDate
     }
 }
-
-extension LoanError: LocalizedError {
-    var errorDescription: String? {
-        switch self {
-        case .alreadyBorrowed:
-            "You already have this book on loan."
-        case .loanLimitReached:
-            "You've reached your loan limit. Return a book before borrowing another."
-        case .onLoan:
-            "This book is on loan to another member."
-        case .invalidLoanPeriod:
-            "A due date couldn't be worked out for this loan."
-        case .notBorrowed:
-            "You don't have this book on loan."
-        }
-    }
-}

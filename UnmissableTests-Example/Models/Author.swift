@@ -10,9 +10,4 @@ import Foundation
 struct Author: Equatable, Sendable {
     let firstName: String
     let lastName: String
-
-    var fullName: String {
-        PersonNameComponents(givenName: firstName,
-                             familyName: lastName).formatted()
-    }
 }
