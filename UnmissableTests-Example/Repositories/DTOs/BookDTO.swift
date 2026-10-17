@@ -36,7 +36,6 @@ struct BookDTO: Decodable {
              title: title,
              author: Author(firstName: author.firstName,
                             lastName: author.lastName),
-             isbn: isbn,
              coverImageName: coverImageName)
     }
 

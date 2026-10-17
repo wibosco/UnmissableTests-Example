@@ -13,12 +13,14 @@ struct UnmissableTests_ExampleApp: App {
     @State private var loansViewModel: LoansViewModel
 
     init() {
-        let repository = DefaultCatalogueRepository(bundle: .main)
+        let store = CatalogueStore(bundle: .main,
+                                   loanLimit: 5,
+                                   loanPeriodInDays: 21,
+                                   calendar: .current,
+                                   now: Date.init)
+        let repository = DefaultCatalogueRepository(store: store)
         let catalogueService = CatalogueService(repository: repository)
         let loanService = LoanService(repository: repository,
-                                      loanLimit: 5,
-                                      loanPeriodInDays: 21,
-                                      calendar: .current,
                                       now: Date.init)
 
         _catalogueViewModel = State(initialValue: CatalogueViewModel(catalogueService: catalogueService,

@@ -25,11 +25,13 @@ struct ContentView: View {
 }
 
 #Preview {
-    let repository = DefaultCatalogueRepository(bundle: .main)
+    let store = CatalogueStore(bundle: .main,
+                               loanLimit: 5,
+                               loanPeriodInDays: 21,
+                               calendar: .current,
+                               now: Date.init)
+    let repository = DefaultCatalogueRepository(store: store)
     let loanService = LoanService(repository: repository,
-                                  loanLimit: 5,
-                                  loanPeriodInDays: 21,
-                                  calendar: .current,
                                   now: Date.init)
 
     ContentView(catalogueViewModel: CatalogueViewModel(catalogueService: CatalogueService(repository: repository),

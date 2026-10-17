@@ -7,10 +7,9 @@
 
 import Foundation
 
-struct Book: Equatable, Identifiable, Sendable {
+struct Book: Equatable, Sendable {
     let id: String
     let title: String
     let author: Author
-    let isbn: String
     let coverImageName: String
 }

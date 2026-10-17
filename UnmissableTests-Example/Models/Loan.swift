@@ -9,6 +9,5 @@ import Foundation
 
 struct Loan: Equatable, Sendable {
     let book: Book
-    let borrowedAt: Date
     let dueDate: Date
 }

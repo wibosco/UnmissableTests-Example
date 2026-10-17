@@ -116,9 +116,12 @@ private struct LoanRow: View {
 }
 
 #Preview {
-    LoansView(viewModel: LoansViewModel(loanService: LoanService(repository: DefaultCatalogueRepository(bundle: .main),
-                                                                 loanLimit: 5,
-                                                                 loanPeriodInDays: 21,
-                                                                 calendar: .current,
+    let store = CatalogueStore(bundle: .main,
+                               loanLimit: 5,
+                               loanPeriodInDays: 21,
+                               calendar: .current,
+                               now: Date.init)
+
+    LoansView(viewModel: LoansViewModel(loanService: LoanService(repository: DefaultCatalogueRepository(store: store),
                                                                  now: Date.init)))
 }
