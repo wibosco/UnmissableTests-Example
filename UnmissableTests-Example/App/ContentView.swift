@@ -25,12 +25,13 @@ struct ContentView: View {
 }
 
 #Preview {
-    let store = CatalogueStore(bundle: .main,
-                               loanLimit: 5,
-                               loanPeriodInDays: 21,
-                               calendar: .current,
-                               now: Date.init)
-    let repository = DefaultCatalogueRepository(store: store)
+    let server = InMemoryServer(bundle: .main,
+                                loanLimit: 5,
+                                loanPeriodInDays: 21,
+                                calendar: .current,
+                                now: Date.init)
+    let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
+                                                networkService: server)
     let loanService = LoanService(repository: repository,
                                   now: Date.init)
 

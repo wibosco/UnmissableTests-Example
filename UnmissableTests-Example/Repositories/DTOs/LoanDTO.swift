@@ -7,8 +7,8 @@
 
 import Foundation
 
-struct LoanDTO: Decodable {
-    let bookId: String
+struct LoanDTO: Codable {
+    let book: BookDTO
     let borrowedAt: Date
     let dueDate: Date
 }

@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct BookDTO: Decodable {
-    enum Status: String, Decodable {
+struct BookDTO: Codable {
+    enum Status: String, Codable {
         case available
         case onLoan = "on_loan"
         case onLoanToYou = "on_loan_to_you"
     }
 
-    struct AuthorResponse: Decodable {
+    struct AuthorResponse: Codable {
         let firstName: String
         let lastName: String
     }
@@ -25,28 +25,4 @@ struct BookDTO: Decodable {
     let isbn: String
     let coverImageName: String
     let availability: Status
-
-    var listing: Listing {
-        Listing(book: book,
-                availability: mappedAvailability)
-    }
-
-    private var book: Book {
-        Book(id: id,
-             title: title,
-             author: Author(firstName: author.firstName,
-                            lastName: author.lastName),
-             coverImageName: coverImageName)
-    }
-
-    private var mappedAvailability: Availability {
-        switch availability {
-        case .available:
-            .available
-        case .onLoan:
-            .onLoan
-        case .onLoanToYou:
-            .onLoanToYou
-        }
-    }
 }

@@ -116,12 +116,14 @@ private struct LoanRow: View {
 }
 
 #Preview {
-    let store = CatalogueStore(bundle: .main,
-                               loanLimit: 5,
-                               loanPeriodInDays: 21,
-                               calendar: .current,
-                               now: Date.init)
+    let server = InMemoryServer(bundle: .main,
+                                loanLimit: 5,
+                                loanPeriodInDays: 21,
+                                calendar: .current,
+                                now: Date.init)
+    let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
+                                                networkService: server)
 
-    LoansView(viewModel: LoansViewModel(loanService: LoanService(repository: DefaultCatalogueRepository(store: store),
+    LoansView(viewModel: LoansViewModel(loanService: LoanService(repository: repository,
                                                                  now: Date.init)))
 }

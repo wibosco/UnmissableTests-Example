@@ -33,7 +33,7 @@ final class LoanService {
     func borrow(_ book: Book) async throws {
         do {
             try await repository.checkOut(bookID: book.id)
-        } catch CatalogueRepositoryError.loanLimitReached {
+        } catch CheckOutError.loanLimitReached {
             throw LoanError.loanLimitReached
         }
     }
