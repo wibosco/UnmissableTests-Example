@@ -30,10 +30,10 @@ struct ContentView: View {
     let networkService = DefaultNetworkService(session: session)
     let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
                                                 networkService: networkService)
-    let loanService = LoanService(repository: repository,
+    let loanService = DefaultLoanService(repository: repository,
                                   now: Date.init)
 
-    ContentView(listingsViewModel: ListingsViewModel(listingService: ListingService(repository: repository),
+    ContentView(listingsViewModel: ListingsViewModel(listingService: DefaultListingService(repository: repository),
                                                        loanService: loanService),
                 loansViewModel: LoansViewModel(loanService: loanService))
 }

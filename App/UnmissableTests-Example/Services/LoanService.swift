@@ -11,7 +11,17 @@ enum LoanError: Error, Equatable {
     case loanLimitReached
 }
 
-final class LoanService {
+protocol LoanService {
+    func loans() async throws -> [Loan]
+
+    @discardableResult
+    func borrowBook(_ book: Book) async throws -> Loan
+    func returnBook(_ book: Book) async throws
+
+    func isOverdue(_ loan: Loan) -> Bool
+}
+
+final class DefaultLoanService: LoanService {
     private let repository: CatalogueRepository
     private let now: () -> Date
     private var cachedLoans: [Loan]?
@@ -40,11 +50,11 @@ final class LoanService {
     // MARK: - Borrowing
 
     @discardableResult
-    func borrow(_ book: Book) async throws -> Loan {
+    func borrowBook(_ book: Book) async throws -> Loan {
         let loan: Loan
 
         do {
-            loan = try await repository.checkOut(book: book.id)
+            loan = try await repository.checkOutBook(book.id)
         } catch CheckOutError.loanLimitReached {
             throw LoanError.loanLimitReached
         }
@@ -58,7 +68,7 @@ final class LoanService {
     // MARK: - Returning
 
     func returnBook(_ book: Book) async throws {
-        _ = try await repository.checkIn(book: book.id)
+        _ = try await repository.checkInBook(book.id)
 
         cachedLoans?.removeAll { $0.book.id == book.id }
     }

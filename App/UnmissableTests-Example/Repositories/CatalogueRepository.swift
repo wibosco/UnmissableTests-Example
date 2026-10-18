@@ -11,8 +11,8 @@ protocol CatalogueRepository {
     func retrieveListings() async throws(ListingsError) -> [Listing]
     func retrieveLoans() async throws(LoansError) -> [Loan]
 
-    func checkOut(book bookID: String) async throws(CheckOutError) -> Loan
-    func checkIn(book bookID: String) async throws(CheckInError) -> Listing
+    func checkOutBook(_ bookID: String) async throws(CheckOutError) -> Loan
+    func checkInBook(_ bookID: String) async throws(CheckInError) -> Listing
 }
 
 enum ListingsError: Error, Equatable {
@@ -81,7 +81,7 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         }
     }
 
-    func checkOut(book bookID: String) async throws(CheckOutError) -> Loan {
+    func checkOutBook(_ bookID: String) async throws(CheckOutError) -> Loan {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkout"))
         request.httpMethod = "POST"
 
@@ -109,7 +109,7 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         }
     }
 
-    func checkIn(book bookID: String) async throws(CheckInError) -> Listing {
+    func checkInBook(_ bookID: String) async throws(CheckInError) -> Listing {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkin"))
         request.httpMethod = "POST"
 

@@ -1,5 +1,5 @@
 //
-//  CatalogueService.swift
+//  ListingService.swift
 //  UnmissableTests-Example
 //
 //  Created by William Boles on 17/10/2026.
@@ -7,7 +7,11 @@
 
 import Foundation
 
-final class ListingService {
+protocol ListingService {
+    func listings() async throws -> [Listing]
+}
+
+final class DefaultListingService: ListingService {
     private let repository: CatalogueRepository
     private var cachedListings: [Listing]?
     

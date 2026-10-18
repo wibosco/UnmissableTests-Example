@@ -122,6 +122,6 @@ private struct LoanRow: View {
     let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
                                                 networkService: networkService)
 
-    LoansView(viewModel: LoansViewModel(loanService: LoanService(repository: repository,
+    LoansView(viewModel: LoansViewModel(loanService: DefaultLoanService(repository: repository,
                                                                  now: Date.init)))
 }

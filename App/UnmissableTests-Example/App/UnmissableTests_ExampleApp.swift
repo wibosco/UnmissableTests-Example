@@ -18,8 +18,8 @@ struct UnmissableTests_ExampleApp: App {
         let networkService = DefaultNetworkService(session: session)
         let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
                                                     networkService: networkService)
-        let listingService = ListingService(repository: repository)
-        let loanService = LoanService(repository: repository,
+        let listingService = DefaultListingService(repository: repository)
+        let loanService = DefaultLoanService(repository: repository,
                                       now: Date.init)
 
         _listingsViewModel = State(initialValue: ListingsViewModel(listingService: listingService,
