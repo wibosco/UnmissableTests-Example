@@ -34,9 +34,9 @@ final class DefaultLoanService: LoanService {
     private let repository: LibraryRepository
     private let now: () -> Date
     private var cachedLoans: [Loan]?
-    
+
     // MARK: - Init
-    
+
     init(repository: LibraryRepository,
          now: @escaping () -> Date) {
         self.repository = repository
@@ -83,7 +83,7 @@ final class DefaultLoanService: LoanService {
             }
         }
 
-        // An unloaded cache has nothing to keep in sync, the next `loans()` call will fetch fresh data.
+        // An unloaded cache has nothing to keep in sync - the next `loans()` call will fetch fresh data.
         cachedLoans?.append(loan)
 
         return loan

@@ -9,20 +9,15 @@ import SwiftUI
 
 struct LoansView: View {
     @Bindable var viewModel: LoansViewModel
-    
+
     // MARK: - Views
-    
+
     var body: some View {
         NavigationStack {
             List(viewModel.state.rows) { row in
                 LoanRow(row: row)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button("Return", systemImage: "arrow.uturn.backward") {
-                            Task {
-                                await viewModel.returnBook(row)
-                            }
-                        }
-                        .tint(.orange)
+                        swipeAction(for: row)
                     }
             }
             .overlay {
@@ -52,13 +47,22 @@ struct LoansView: View {
             }
         }
     }
+
+    private func swipeAction(for row: LoansViewModel.Row) -> some View {
+        Button("Return", systemImage: "arrow.uturn.backward") {
+            Task {
+                await viewModel.returnBook(row)
+            }
+        }
+        .tint(.orange)
+    }
 }
 
 private struct LoanRow: View {
     let row: LoansViewModel.Row
-    
+
     // MARK: - Views
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(row.coverImageName)

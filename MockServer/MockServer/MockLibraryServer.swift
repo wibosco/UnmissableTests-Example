@@ -7,8 +7,8 @@
 
 import Foundation
 
-/// Stands in for the library API. Fixed data, such as the catalogue and existing loans, is
-/// read from JSON files; responses that depend on the request are built from that data.
+/// Stands in for the library API. The catalogue and loans are seeded from JSON files into an in-memory library,
+/// which borrowing and returning then change for as long as the app runs.
 public final class MockLibraryServer: URLProtocol {
     private enum Route {
         case books
@@ -59,7 +59,7 @@ public final class MockLibraryServer: URLProtocol {
 
     public override func startLoading() {
         do {
-            let (data, response) = try cannedResponse(for: request)
+            let (data, response) = try respond(to: request)
 
             client?.urlProtocol(self,
                                 didReceive: response,
@@ -77,7 +77,7 @@ public final class MockLibraryServer: URLProtocol {
 
     // MARK: - Responses
 
-    private func cannedResponse(for request: URLRequest) throws -> (Data, HTTPURLResponse) {
+    private func respond(to request: URLRequest) throws -> (Data, HTTPURLResponse) {
         guard let url = request.url else {
             throw URLError(.badURL)
         }
@@ -87,94 +87,67 @@ public final class MockLibraryServer: URLProtocol {
                                 statusCode: 404)
         }
 
-        switch route {
-        case .books:
-            return try response(for: url,
-                                statusCode: 200,
-                                data: try jsonData(named: "get-books-success"))
-        case .loans:
-            return try response(for: url,
-                                statusCode: 200,
-                                data: try loansShiftedToNow())
-        case .createLoan(let bookID):
-            guard let book = try book(withID: bookID,
-                                      availability: "on_loan_to_you") else {
+        let library = LibraryStore.shared
+
+        do {
+            switch route {
+            case .books:
                 return try response(for: url,
-                                    statusCode: 404)
-            }
-
-            let borrowedDate = Date()
-            let loan: [String: Any] = [
-                "book": book,
-                "borrowed_date": ISO8601DateFormatter().string(from: borrowedDate),
-                "due_date": ISO8601DateFormatter().string(from: borrowedDate.addingTimeInterval(loanPeriod))
-            ]
-
-            return try response(for: url,
-                                statusCode: 200,
-                                data: try JSONSerialization.data(withJSONObject: loan))
-        case .deleteLoan(let bookID):
-            guard let book = try book(withID: bookID,
-                                      availability: "available") else {
+                                    statusCode: 200,
+                                    body: BookListResponse(books: library.retrieveBooks()))
+            case .loans:
                 return try response(for: url,
-                                    statusCode: 404)
+                                    statusCode: 200,
+                                    body: LoanListResponse(loans: library.retrieveLoans()))
+            case .createLoan(let bookID):
+                return try response(for: url,
+                                    statusCode: 200,
+                                    body: library.createLoan(forBookID: bookID))
+            case .deleteLoan(let bookID):
+                return try response(for: url,
+                                    statusCode: 200,
+                                    body: library.deleteLoan(forBookID: bookID))
             }
-
+        } catch let error as LibraryStoreError {
             return try response(for: url,
-                                statusCode: 200,
-                                data: try JSONSerialization.data(withJSONObject: book))
+                                error: error)
         }
     }
 
-    private var loanPeriod: TimeInterval {
-        21 * 24 * 60 * 60
+    private func response(for url: URL,
+                          error: LibraryStoreError) throws -> (Data, HTTPURLResponse) {
+        switch error {
+        case .bookNotFound:
+            return try response(for: url,
+                                statusCode: 404)
+        case .bookUnavailable:
+            return try response(for: url,
+                                statusCode: 409,
+                                body: ErrorResponse(error: "book_unavailable",
+                                                    message: "This book is out on loan."))
+        case .loanLimitReached:
+            return try response(for: url,
+                                statusCode: 409,
+                                body: ErrorResponse(error: "loan_limit_reached",
+                                                    message: "You've reached your loan limit. Return a book to borrow another."))
+        case .notBorrowed:
+            return try response(for: url,
+                                statusCode: 404,
+                                body: ErrorResponse(error: "not_borrowed",
+                                                    message: "You don't have this book on loan."))
+        }
     }
 
-    private func book(withID id: String,
-                      availability: String) throws -> [String: Any]? {
-        guard let json = try JSONSerialization.jsonObject(with: jsonData(named: "get-books-success")) as? [String: Any],
-              let books = json["books"] as? [[String: Any]] else {
-            throw URLError(.cannotParseResponse)
-        }
+    private func response(for url: URL,
+                          statusCode: Int,
+                          body: some Encodable) throws -> (Data, HTTPURLResponse) {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dateEncodingStrategy = .iso8601
 
-        guard var book = books.first(where: { $0["id"] as? String == id }) else {
-            return nil
-        }
-
-        book["availability"] = availability
-
-        return book
-    }
-
-    private func loansShiftedToNow() throws -> Data {
-        let formatter = ISO8601DateFormatter()
-
-        // The fixture's dates were written on this day. Shifting them by the time since keeps the same mix of
-        // due and overdue loans whenever the app runs, rather than every loan eventually becoming overdue.
-        guard let fixtureDate = formatter.date(from: "2026-10-18T00:00:00Z"),
-              var json = try JSONSerialization.jsonObject(with: jsonData(named: "get-loans-success")) as? [String: Any],
-              let loans = json["loans"] as? [[String: Any]] else {
-            throw URLError(.cannotParseResponse)
-        }
-
-        let offset = Date().timeIntervalSince(fixtureDate)
-
-        json["loans"] = try loans.map { loan in
-            var loan = loan
-
-            for key in ["borrowed_date", "due_date"] {
-                guard let string = loan[key] as? String,
-                      let date = formatter.date(from: string) else {
-                    throw URLError(.cannotParseResponse)
-                }
-
-                loan[key] = formatter.string(from: date.addingTimeInterval(offset))
-            }
-
-            return loan
-        }
-
-        return try JSONSerialization.data(withJSONObject: json)
+        return try response(for: url,
+                            statusCode: statusCode,
+                            data: encoder.encode(body))
     }
 
     private func response(for url: URL,
@@ -188,14 +161,5 @@ public final class MockLibraryServer: URLProtocol {
         }
 
         return (data, response)
-    }
-
-    private func jsonData(named name: String) throws -> Data {
-        guard let url = Bundle(for: MockLibraryServer.self).url(forResource: name,
-                                                                withExtension: "json") else {
-            throw URLError(.fileDoesNotExist)
-        }
-
-        return try Data(contentsOf: url)
     }
 }

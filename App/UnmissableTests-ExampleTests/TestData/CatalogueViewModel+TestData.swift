@@ -15,10 +15,10 @@ extension CatalogueViewModel.Row {
                          coverImageName: String = "test_coverImageName",
                          availability: Availability = .testData()) -> CatalogueViewModel.Row {
         CatalogueViewModel.Row(id: id,
-                              title: title,
-                              authorName: authorName,
-                              coverImageName: coverImageName,
-                              availability: availability)
+                               title: title,
+                               authorName: authorName,
+                               coverImageName: coverImageName,
+                               availability: availability)
     }
 }
 

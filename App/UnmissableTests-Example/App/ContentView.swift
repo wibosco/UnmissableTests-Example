@@ -10,9 +10,9 @@ import SwiftUI
 struct ContentView: View {
     let catalogueViewModel: CatalogueViewModel
     let loansViewModel: LoansViewModel
-    
+
     // MARK: - Views
-    
+
     var body: some View {
         TabView {
             Tab("Catalogue", systemImage: "books.vertical") {

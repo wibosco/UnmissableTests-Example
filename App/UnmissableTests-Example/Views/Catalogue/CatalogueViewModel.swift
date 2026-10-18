@@ -65,7 +65,7 @@ final class CatalogueViewModel {
 
     private let listingService: ListingService
     private let loanService: LoanService
-    
+
     @ObservationIgnored private var listings = [Listing]()
 
     var isShowingAlert: Bool {
@@ -78,7 +78,7 @@ final class CatalogueViewModel {
             }
         }
     }
-    
+
     // MARK: - Init
 
     init(listingService: ListingService,
@@ -129,7 +129,7 @@ final class CatalogueViewModel {
 
     private func availability(for listing: Listing,
                               loanedBookIDs: Set<String>) -> Row.Availability {
-        // The loan cache, rather than the catalogue, is the source of truth for the user's own loans.
+        // The user's loans, rather than the catalogue's availability, decide which books are on loan to them.
         if loanedBookIDs.contains(listing.book.id) {
             return .onLoanToYou
         }

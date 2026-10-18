@@ -41,7 +41,7 @@ final class LoansViewModel {
     private(set) var alert: Alert?
 
     private let loanService: LoanService
-    
+
     @ObservationIgnored private var loans = [Loan]()
 
     var isShowingAlert: Bool {
@@ -54,7 +54,7 @@ final class LoansViewModel {
             }
         }
     }
-    
+
     // MARK: - Init
 
     init(loanService: LoanService) {

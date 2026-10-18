@@ -9,32 +9,15 @@ import SwiftUI
 
 struct CatalogueView: View {
     @Bindable var viewModel: CatalogueViewModel
-    
+
     // MARK: - Views
-    
+
     var body: some View {
         NavigationStack {
             List(viewModel.state.rows) { row in
                 ListingRow(row: row)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        if let action = row.action {
-                            switch action {
-                            case .borrow:
-                                Button("Borrow", systemImage: "book") {
-                                    Task {
-                                        await viewModel.borrowBook(row)
-                                    }
-                                }
-                                .tint(.green)
-                            case .return:
-                                Button("Return", systemImage: "arrow.uturn.backward") {
-                                    Task {
-                                        await viewModel.returnBook(row)
-                                    }
-                                }
-                                .tint(.orange)
-                            }
-                        }
+                        swipeAction(for: row)
                     }
             }
             .overlay {
@@ -64,13 +47,35 @@ struct CatalogueView: View {
             }
         }
     }
+
+    @ViewBuilder
+    private func swipeAction(for row: CatalogueViewModel.Row) -> some View {
+        switch row.action {
+        case .borrow:
+            Button("Borrow", systemImage: "book") {
+                Task {
+                    await viewModel.borrowBook(row)
+                }
+            }
+            .tint(.green)
+        case .return:
+            Button("Return", systemImage: "arrow.uturn.backward") {
+                Task {
+                    await viewModel.returnBook(row)
+                }
+            }
+            .tint(.orange)
+        case nil:
+            EmptyView()
+        }
+    }
 }
 
 private struct ListingRow: View {
     let row: CatalogueViewModel.Row
-    
+
     // MARK: - Views
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(row.coverImageName)

@@ -126,7 +126,7 @@ struct LoanServiceTests {
           )
     )
     func failedBorrowBook(repositoryError: CreateLoanRepositoryError,
-                           expectedError: BorrowBookServiceError) async throws {
+                          expectedError: BorrowBookServiceError) async throws {
         let repository = StubLibraryRepository()
         repository.createLoanResponse = .failure(repositoryError)
 

@@ -136,9 +136,13 @@ final class DefaultLibraryRepository: LibraryRepository {
     private func book(from bookDTO: BookDTO) -> Book {
         Book(id: bookDTO.id,
              title: bookDTO.title,
-             author: Author(firstName: bookDTO.author.firstName,
-                            lastName: bookDTO.author.lastName),
+             author: author(from: bookDTO.author),
              coverImageName: bookDTO.coverImageName)
+    }
+
+    private func author(from authorDTO: BookDTO.AuthorDTO) -> Author {
+        Author(firstName: authorDTO.firstName,
+               lastName: authorDTO.lastName)
     }
 
     private func availability(from availability: BookDTO.AvailabilityDTO) -> Availability {

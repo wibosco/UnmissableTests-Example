@@ -18,13 +18,13 @@ enum ListingsServiceError: Error, Equatable {
 final class DefaultListingService: ListingService {
     private let repository: LibraryRepository
     private var cachedListings: [Listing]?
-    
+
     // MARK: - Init
-    
+
     init(repository: LibraryRepository) {
         self.repository = repository
     }
-    
+
     // MARK: - Listings
 
     func listings() async throws(ListingsServiceError) -> [Listing] {

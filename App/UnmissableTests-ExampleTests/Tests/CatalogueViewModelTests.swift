@@ -69,10 +69,10 @@ struct CatalogueViewModelTests {
         await sut.load()
 
         let expectedRows: [CatalogueViewModel.Row] = [.testData(id: "book-01",
-                                                               title: "Dracula",
-                                                               authorName: "Stoker, Bram",
-                                                               coverImageName: "dracula",
-                                                               availability: .onLoan)]
+                                                                title: "Dracula",
+                                                                authorName: "Stoker, Bram",
+                                                                coverImageName: "dracula",
+                                                                availability: .onLoan)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -241,7 +241,7 @@ struct CatalogueViewModelTests {
           )
     )
     func failedBorrowBook(borrowError: BorrowBookServiceError,
-                      expectedAlert: CatalogueViewModel.Alert) async throws {
+                          expectedAlert: CatalogueViewModel.Alert) async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
         let loanService = StubLoanService()
@@ -515,6 +515,6 @@ extension CatalogueViewModelTests {
     func createSUT(listingService: ListingService = StubListingService(),
                    loanService: LoanService = StubLoanService()) -> CatalogueViewModel {
         CatalogueViewModel(listingService: listingService,
-                          loanService: loanService)
+                           loanService: loanService)
     }
 }

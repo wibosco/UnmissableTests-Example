@@ -18,13 +18,13 @@ struct AppDependencies {
         let session = MockLibraryServer.session()
         let networkService = DefaultNetworkService(session: session)
         let repository = DefaultLibraryRepository(baseURL: URL(string: "https://library.example.com")!,
-                                                    networkService: networkService)
+                                                  networkService: networkService)
         let listingService = DefaultListingService(repository: repository)
         let loanService = DefaultLoanService(repository: repository,
                                              now: Date.init)
 
         catalogueViewModel = CatalogueViewModel(listingService: listingService,
-                                              loanService: loanService)
+                                                loanService: loanService)
         loansViewModel = LoansViewModel(loanService: loanService)
     }
 }
