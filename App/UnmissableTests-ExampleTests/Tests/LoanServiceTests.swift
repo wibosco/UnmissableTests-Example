@@ -16,7 +16,7 @@ struct LoanServiceTests {
 
     @Test("Given loans are retrieved, when the retrieval is made, then the repository is asked for loans")
     func loansRetrievalRequest() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .success([])
 
         let sut = createSUT(repository: repository)
@@ -28,7 +28,7 @@ struct LoanServiceTests {
 
     @Test("Given loans are retrieved, when that retrieval is successful, then the repository's loans are returned")
     func successfulLoansRetrieval() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         let repositoryLoans: [Loan] = [.testData(book: .testData(id: "book-01"),
                                                  dueDate: Date(timeIntervalSince1970: 100)),
                                        .testData(book: .testData(id: "book-02"),
@@ -39,17 +39,12 @@ struct LoanServiceTests {
 
         let loans = try await sut.loans()
 
-        let expectedLoans: [Loan] = [.testData(book: .testData(id: "book-01"),
-                                               dueDate: Date(timeIntervalSince1970: 100)),
-                                     .testData(book: .testData(id: "book-02"),
-                                               dueDate: Date(timeIntervalSince1970: 200))]
-
-        #expect(loans == expectedLoans)
+        #expect(loans == repositoryLoans)
     }
 
     @Test("Given loans are retrieved, when that retrieval fails, then a failed error is thrown")
     func failedLoansRetrieval() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .failure(.failed)
 
         let sut = createSUT(repository: repository)
@@ -61,7 +56,7 @@ struct LoanServiceTests {
 
     @Test("Given loans have already been retrieved, when they are retrieved again, then the repository isn't asked again")
     func cachedLoansRetrieval() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .success([.testData()])
 
         let sut = createSUT(repository: repository)
@@ -74,7 +69,7 @@ struct LoanServiceTests {
 
     @Test("Given a loans retrieval has failed, when loans are retrieved again, then the repository is asked again")
     func failedLoansRetrievalIsNotCached() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .failure(.failed)
 
         let sut = createSUT(repository: repository)
@@ -90,54 +85,50 @@ struct LoanServiceTests {
 
     // MARK: - BorrowBook
 
-    @Test("Given a book is borrowed, when the borrow is made, then the repository is asked to check out that book")
+    @Test("Given a book is borrowed, when the borrow is made, then the repository is asked to create a loan for that book")
     func borrowBookRequest() async throws {
-        let repository = StubCatalogueRepository()
-        repository.checkOutBookResponse = .success(.testData(book: .testData(id: "book-01")))
+        let repository = StubLibraryRepository()
+        repository.createLoanResponse = .success(.testData())
 
         let sut = createSUT(repository: repository)
 
         try await sut.borrowBook(.testData(id: "book-01"))
 
-        #expect(repository.events == [.checkOutBook("book-01")])
+        #expect(repository.events == [.createLoan(forBookID: "book-01")])
     }
 
     @Test("Given a book is borrowed, when that borrow is successful, then the repository's loan is returned")
     func successfulBorrowBook() async throws {
-        let repository = StubCatalogueRepository()
-        repository.checkOutBookResponse = .success(.testData(book: .testData(id: "book-01"),
-                                                             dueDate: Date(timeIntervalSince1970: 100)))
+        let repository = StubLibraryRepository()
+        let repositoryLoan = Loan.testData(book: .testData(id: "book-01"),
+                                           dueDate: Date(timeIntervalSince1970: 100))
+        repository.createLoanResponse = .success(repositoryLoan)
 
         let sut = createSUT(repository: repository)
 
         let loan = try await sut.borrowBook(.testData(id: "book-01"))
 
-        let expectedLoan = Loan.testData(book: .testData(id: "book-01"),
-                                         dueDate: Date(timeIntervalSince1970: 100))
-
-        #expect(loan == expectedLoan)
+        #expect(loan == repositoryLoan)
     }
 
     @Test("Given a book is borrowed, when that borrow fails, then the matching error is thrown",
           arguments: zip(
             [
               .loanLimitReached,
-              .alreadyBorrowed,
               .bookUnavailable,
               .failed
-            ] as [CheckOutError],
+            ] as [CreateLoanRepositoryError],
             [
               .loanLimitReached,
               .failed,
-              .failed,
               .failed
-            ] as [BorrowBookError]
+            ] as [BorrowBookServiceError]
           )
     )
-    func borrowBookFailure(repositoryError: CheckOutError,
-                           expectedError: BorrowBookError) async throws {
-        let repository = StubCatalogueRepository()
-        repository.checkOutBookResponse = .failure(repositoryError)
+    func failedBorrowBook(repositoryError: CreateLoanRepositoryError,
+                           expectedError: BorrowBookServiceError) async throws {
+        let repository = StubLibraryRepository()
+        repository.createLoanResponse = .failure(repositoryError)
 
         let sut = createSUT(repository: repository)
 
@@ -148,9 +139,9 @@ struct LoanServiceTests {
 
     @Test("Given loans have been retrieved, when a book is borrowed, then its loan is added to the cached loans")
     func borrowBookAddsToCachedLoans() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .success([.testData(book: .testData(id: "book-01"))])
-        repository.checkOutBookResponse = .success(.testData(book: .testData(id: "book-02")))
+        repository.createLoanResponse = .success(.testData(book: .testData(id: "book-02")))
 
         let sut = createSUT(repository: repository)
 
@@ -167,8 +158,8 @@ struct LoanServiceTests {
 
     @Test("Given loans haven't been retrieved, when a book is borrowed, then the next loans retrieval returns the repository's loans")
     func borrowBookWithUnloadedCache() async throws {
-        let repository = StubCatalogueRepository()
-        repository.checkOutBookResponse = .success(.testData(book: .testData(id: "book-02")))
+        let repository = StubLibraryRepository()
+        repository.createLoanResponse = .success(.testData())
         repository.retrieveLoansResponse = .success([.testData(book: .testData(id: "book-01")),
                                                      .testData(book: .testData(id: "book-02"))])
 
@@ -186,9 +177,9 @@ struct LoanServiceTests {
 
     @Test("Given loans have been retrieved, when a book borrow fails, then the cached loans are unchanged")
     func failedBorrowBookLeavesCachedLoansUnchanged() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .success([.testData(book: .testData(id: "book-01"))])
-        repository.checkOutBookResponse = .failure(.failed)
+        repository.createLoanResponse = .failure(.failed)
 
         let sut = createSUT(repository: repository)
 
@@ -202,22 +193,22 @@ struct LoanServiceTests {
 
     // MARK: - ReturnBook
 
-    @Test("Given a book is returned, when the return is made, then the repository is asked to check in that book")
+    @Test("Given a book is returned, when the return is made, then the repository is asked to delete that book's loan")
     func returnBookRequest() async throws {
-        let repository = StubCatalogueRepository()
-        repository.checkInBookResponse = .success(.testData(book: .testData(id: "book-01")))
+        let repository = StubLibraryRepository()
+        repository.deleteLoanResponse = .success(.testData())
 
         let sut = createSUT(repository: repository)
 
         try await sut.returnBook(.testData(id: "book-01"))
 
-        #expect(repository.events == [.checkInBook("book-01")])
+        #expect(repository.events == [.deleteLoan(forBookID: "book-01")])
     }
 
     @Test("Given a book is returned, when that return is successful, then an error isn't thrown")
     func successfulReturnBook() async throws {
-        let repository = StubCatalogueRepository()
-        repository.checkInBookResponse = .success(.testData(book: .testData(id: "book-01")))
+        let repository = StubLibraryRepository()
+        repository.deleteLoanResponse = .success(.testData())
 
         let sut = createSUT(repository: repository)
 
@@ -230,25 +221,25 @@ struct LoanServiceTests {
           arguments: [
             .notBorrowed,
             .failed
-          ] as [CheckInError]
+          ] as [DeleteLoanRepositoryError]
     )
-    func returnBookFailure(repositoryError: CheckInError) async throws {
-        let repository = StubCatalogueRepository()
-        repository.checkInBookResponse = .failure(repositoryError)
+    func failedReturnBook(repositoryError: DeleteLoanRepositoryError) async throws {
+        let repository = StubLibraryRepository()
+        repository.deleteLoanResponse = .failure(repositoryError)
 
         let sut = createSUT(repository: repository)
 
-        await #expect(throws: ReturnBookError.failed) {
+        await #expect(throws: ReturnBookServiceError.failed) {
             try await sut.returnBook(.testData(id: "book-01"))
         }
     }
 
     @Test("Given loans have been retrieved, when a book is returned, then its loan is removed from the cached loans")
     func returnBookRemovesFromCachedLoans() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .success([.testData(book: .testData(id: "book-01")),
                                                      .testData(book: .testData(id: "book-02"))])
-        repository.checkInBookResponse = .success(.testData(book: .testData(id: "book-01")))
+        repository.deleteLoanResponse = .success(.testData())
 
         let sut = createSUT(repository: repository)
 
@@ -260,12 +251,27 @@ struct LoanServiceTests {
         #expect(loans == [.testData(book: .testData(id: "book-02"))])
     }
 
+    @Test("Given loans haven't been retrieved, when a book is returned, then the next loans retrieval returns the repository's loans")
+    func returnBookWithUnloadedCache() async throws {
+        let repository = StubLibraryRepository()
+        repository.deleteLoanResponse = .success(.testData())
+        repository.retrieveLoansResponse = .success([.testData(book: .testData(id: "book-02"))])
+
+        let sut = createSUT(repository: repository)
+
+        try await sut.returnBook(.testData(id: "book-01"))
+
+        let loans = try await sut.loans()
+
+        #expect(loans == [.testData(book: .testData(id: "book-02"))])
+    }
+
     @Test("Given loans have been retrieved, when a book return fails, then the cached loans are unchanged")
     func failedReturnBookLeavesCachedLoansUnchanged() async throws {
-        let repository = StubCatalogueRepository()
+        let repository = StubLibraryRepository()
         repository.retrieveLoansResponse = .success([.testData(book: .testData(id: "book-01")),
                                                      .testData(book: .testData(id: "book-02"))])
-        repository.checkInBookResponse = .failure(.failed)
+        repository.deleteLoanResponse = .failure(.failed)
 
         let sut = createSUT(repository: repository)
 
@@ -307,7 +313,7 @@ struct LoanServiceTests {
 }
 
 extension LoanServiceTests {
-    func createSUT(repository: CatalogueRepository = StubCatalogueRepository(),
+    func createSUT(repository: LibraryRepository = StubLibraryRepository(),
                    now: @escaping () -> Date = { Date(timeIntervalSince1970: 0) }) -> DefaultLoanService {
         DefaultLoanService(repository: repository,
                            now: now)

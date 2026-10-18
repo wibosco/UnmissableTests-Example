@@ -10,10 +10,10 @@ import Foundation
 
 nonisolated extension LoanDTO {
     static func testData(book: BookDTO = .testData(),
-                         borrowedAt: Date = Date(timeIntervalSince1970: 0),
+                         borrowedDate: Date = Date(timeIntervalSince1970: 0),
                          dueDate: Date = Date(timeIntervalSince1970: 0)) -> LoanDTO {
         LoanDTO(book: book,
-                borrowedAt: borrowedAt,
+                borrowedDate: borrowedDate,
                 dueDate: dueDate)
     }
 }

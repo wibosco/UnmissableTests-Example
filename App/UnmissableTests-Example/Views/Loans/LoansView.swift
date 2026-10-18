@@ -5,7 +5,6 @@
 //  Created by William Boles on 17/10/2026.
 //
 
-import MockServer
 import SwiftUI
 
 struct LoansView: View {
@@ -15,7 +14,7 @@ struct LoansView: View {
     
     var body: some View {
         NavigationStack {
-            List(rows) { row in
+            List(viewModel.state.rows) { row in
                 LoanRow(row: row)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button("Return", systemImage: "arrow.uturn.backward") {
@@ -44,37 +43,13 @@ struct LoansView: View {
             .task {
                 await viewModel.load()
             }
-            .alert(viewModel.alert.map(title(for:)) ?? "",
+            .alert(viewModel.alert?.title ?? "",
                    isPresented: $viewModel.isShowingAlert,
                    presenting: viewModel.alert) { _ in
                 Button("OK", role: .cancel) {}
             } message: { alert in
-                Text(message(for: alert))
+                Text(alert.message)
             }
-        }
-    }
-
-    private var rows: [LoansViewModel.Row] {
-        guard case .loaded(let rows) = viewModel.state else {
-            return []
-        }
-
-        return rows
-    }
-
-    // MARK: - Alert
-
-    private func title(for alert: LoansViewModel.Alert) -> String {
-        switch alert {
-        case .returnFailed:
-            "Unable to Return"
-        }
-    }
-
-    private func message(for alert: LoansViewModel.Alert) -> String {
-        switch alert {
-        case .returnFailed:
-            "Please try again."
         }
     }
 }
@@ -116,12 +91,22 @@ private struct LoanRow: View {
     }
 }
 
-#Preview {
-    let session = DefaultMockServer.session()
-    let networkService = DefaultNetworkService(session: session)
-    let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
-                                                networkService: networkService)
+private extension LoansViewModel.Alert {
+    var title: String {
+        switch self {
+        case .returnFailed:
+            "Unable to Return"
+        }
+    }
 
-    LoansView(viewModel: LoansViewModel(loanService: DefaultLoanService(repository: repository,
-                                                                 now: Date.init)))
+    var message: String {
+        switch self {
+        case .returnFailed:
+            "Please try again."
+        }
+    }
+}
+
+#Preview {
+    LoansView(viewModel: AppDependencies().loansViewModel)
 }

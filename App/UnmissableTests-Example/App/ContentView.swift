@@ -5,19 +5,18 @@
 //  Created by William Boles on 14/10/2026.
 //
 
-import MockServer
 import SwiftUI
 
 struct ContentView: View {
-    let listingsViewModel: ListingsViewModel
+    let catalogueViewModel: CatalogueViewModel
     let loansViewModel: LoansViewModel
     
     // MARK: - Views
     
     var body: some View {
         TabView {
-            Tab("Listings", systemImage: "books.vertical") {
-                ListingsView(viewModel: listingsViewModel)
+            Tab("Catalogue", systemImage: "books.vertical") {
+                CatalogueView(viewModel: catalogueViewModel)
             }
 
             Tab("Loans", systemImage: "book") {
@@ -28,14 +27,8 @@ struct ContentView: View {
 }
 
 #Preview {
-    let session = DefaultMockServer.session()
-    let networkService = DefaultNetworkService(session: session)
-    let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
-                                                networkService: networkService)
-    let loanService = DefaultLoanService(repository: repository,
-                                  now: Date.init)
+    let dependencies = AppDependencies()
 
-    ContentView(listingsViewModel: ListingsViewModel(listingService: DefaultListingService(repository: repository),
-                                                       loanService: loanService),
-                loansViewModel: LoansViewModel(loanService: loanService))
+    ContentView(catalogueViewModel: dependencies.catalogueViewModel,
+                loansViewModel: dependencies.loansViewModel)
 }

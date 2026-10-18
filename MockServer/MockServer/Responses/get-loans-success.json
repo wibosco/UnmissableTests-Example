@@ -1,0 +1,64 @@
+{
+  "loans": [
+    {
+      "book": {
+        "id": "book-03",
+        "title": "The Wonderful Wizard of Oz",
+        "author": {
+          "first_name": "L. Frank",
+          "last_name": "Baum"
+        },
+        "isbn": "9780141321028",
+        "cover_image_name": "cover-the-wonderful-wizard-of-oz",
+        "availability": "on_loan_to_you"
+      },
+      "borrowed_date": "2026-10-06T10:15:00Z",
+      "due_date": "2026-10-27T10:15:00Z"
+    },
+    {
+      "book": {
+        "id": "book-05",
+        "title": "Moby-Dick",
+        "author": {
+          "first_name": "Herman",
+          "last_name": "Melville"
+        },
+        "isbn": "9780142437247",
+        "cover_image_name": "cover-moby-dick",
+        "availability": "on_loan_to_you"
+      },
+      "borrowed_date": "2026-09-15T14:30:00Z",
+      "due_date": "2026-10-06T14:30:00Z"
+    },
+    {
+      "book": {
+        "id": "book-09",
+        "title": "Jane Eyre",
+        "author": {
+          "first_name": "Charlotte",
+          "last_name": "Brontë"
+        },
+        "isbn": "9780141441146",
+        "cover_image_name": "cover-jane-eyre",
+        "availability": "on_loan_to_you"
+      },
+      "borrowed_date": "2026-10-10T09:00:00Z",
+      "due_date": "2026-10-31T09:00:00Z"
+    },
+    {
+      "book": {
+        "id": "book-14",
+        "title": "Anne of Green Gables",
+        "author": {
+          "first_name": "L.M.",
+          "last_name": "Montgomery"
+        },
+        "isbn": "9780141321592",
+        "cover_image_name": "cover-anne-of-green-gables",
+        "availability": "on_loan_to_you"
+      },
+      "borrowed_date": "2026-10-14T16:45:00Z",
+      "due_date": "2026-11-04T16:45:00Z"
+    }
+  ]
+}

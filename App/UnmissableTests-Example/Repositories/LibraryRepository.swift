@@ -1,5 +1,5 @@
 //
-//  CatalogueRepository.swift
+//  LibraryRepository.swift
 //  UnmissableTests-Example
 //
 //  Created by William Boles on 17/10/2026.
@@ -7,35 +7,34 @@
 
 import Foundation
 
-protocol CatalogueRepository {
-    func retrieveListings() async throws(ListingsError) -> [Listing]
-    func retrieveLoans() async throws(LoansError) -> [Loan]
+protocol LibraryRepository {
+    func retrieveListings() async throws(RetrieveListingsRepositoryError) -> [Listing]
+    func retrieveLoans() async throws(RetrieveLoansRepositoryError) -> [Loan]
 
-    func checkOutBook(_ bookID: String) async throws(CheckOutError) -> Loan
-    func checkInBook(_ bookID: String) async throws(CheckInError) -> Listing
+    func createLoan(forBookID bookID: String) async throws(CreateLoanRepositoryError) -> Loan
+    func deleteLoan(forBookID bookID: String) async throws(DeleteLoanRepositoryError) -> Listing
 }
 
-enum ListingsError: Error, Equatable {
+enum RetrieveListingsRepositoryError: Error, Equatable {
     case failed
 }
 
-enum LoansError: Error, Equatable {
+enum RetrieveLoansRepositoryError: Error, Equatable {
     case failed
 }
 
-enum CheckOutError: Error, Equatable {
-    case alreadyBorrowed
+enum CreateLoanRepositoryError: Error, Equatable {
     case loanLimitReached
     case bookUnavailable
     case failed
 }
 
-enum CheckInError: Error, Equatable {
+enum DeleteLoanRepositoryError: Error, Equatable {
     case notBorrowed
     case failed
 }
 
-final class DefaultCatalogueRepository: CatalogueRepository {
+final class DefaultLibraryRepository: LibraryRepository {
     private let baseURL: URL
     private let networkService: NetworkService
 
@@ -47,18 +46,17 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         self.networkService = networkService
     }
 
-    // MARK: - Catalogue
+    // MARK: - Listings
 
-    func retrieveListings() async throws(ListingsError) -> [Listing] {
+    func retrieveListings() async throws(RetrieveListingsRepositoryError) -> [Listing] {
         let request = URLRequest(url: baseURL.appending(path: "books"))
 
         do {
-            let bookDTOs = try await networkService.send(request,
-                                                         acceptableStatusCodes: 200..<300,
-                                                         success: [BookDTO].self,
-                                                         failure: Never.self)
+            let bookListDTO = try await networkService.send(request,
+                                                            success: BookListDTO.self,
+                                                            failure: Never.self)
 
-            return bookDTOs.map { listing(from: $0) }
+            return bookListDTO.books.map { listing(from: $0) }
         } catch {
             throw .failed
         }
@@ -66,38 +64,34 @@ final class DefaultCatalogueRepository: CatalogueRepository {
 
     // MARK: - Loans
 
-    func retrieveLoans() async throws(LoansError) -> [Loan] {
+    func retrieveLoans() async throws(RetrieveLoansRepositoryError) -> [Loan] {
         let request = URLRequest(url: baseURL.appending(path: "loans"))
 
         do {
-            let loanDTOs = try await networkService.send(request,
-                                                         acceptableStatusCodes: 200..<300,
-                                                         success: [LoanDTO].self,
-                                                         failure: Never.self)
+            let loanListDTO = try await networkService.send(request,
+                                                            success: LoanListDTO.self,
+                                                            failure: Never.self)
 
-            return loanDTOs.map { loan(from: $0) }
+            return loanListDTO.loans.map { loan(from: $0) }
         } catch {
             throw .failed
         }
     }
 
-    func checkOutBook(_ bookID: String) async throws(CheckOutError) -> Loan {
-        var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkout"))
-        request.httpMethod = "POST"
+    func createLoan(forBookID bookID: String) async throws(CreateLoanRepositoryError) -> Loan {
+        var request = URLRequest(url: baseURL.appending(path: "loans/\(bookID)"))
+        request.httpMethod = "PUT"
 
         do {
             let loanDTO = try await networkService.send(request,
-                                                        acceptableStatusCodes: 200..<300,
                                                         success: LoanDTO.self,
-                                                        failure: CheckOutErrorDTO.self)
+                                                        failure: CreateLoanErrorDTO.self)
 
             return loan(from: loanDTO)
         } catch {
             switch error {
             case .failureResponse(let errorDTO):
                 switch errorDTO.error {
-                case .alreadyBorrowed:
-                    throw .alreadyBorrowed
                 case .loanLimitReached:
                     throw .loanLimitReached
                 case .bookUnavailable:
@@ -109,15 +103,14 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         }
     }
 
-    func checkInBook(_ bookID: String) async throws(CheckInError) -> Listing {
-        var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkin"))
-        request.httpMethod = "POST"
+    func deleteLoan(forBookID bookID: String) async throws(DeleteLoanRepositoryError) -> Listing {
+        var request = URLRequest(url: baseURL.appending(path: "loans/\(bookID)"))
+        request.httpMethod = "DELETE"
 
         do {
             let bookDTO = try await networkService.send(request,
-                                                        acceptableStatusCodes: 200..<300,
                                                         success: BookDTO.self,
-                                                        failure: CheckInErrorDTO.self)
+                                                        failure: DeleteLoanErrorDTO.self)
 
             return listing(from: bookDTO)
         } catch {
@@ -148,8 +141,8 @@ final class DefaultCatalogueRepository: CatalogueRepository {
              coverImageName: bookDTO.coverImageName)
     }
 
-    private func availability(from status: BookDTO.Status) -> Availability {
-        switch status {
+    private func availability(from availability: BookDTO.AvailabilityDTO) -> Availability {
+        switch availability {
         case .available:
             .available
         case .onLoan:

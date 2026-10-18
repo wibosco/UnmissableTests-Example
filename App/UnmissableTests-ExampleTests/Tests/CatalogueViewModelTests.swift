@@ -1,5 +1,5 @@
 //
-//  ListingsViewModelTests.swift
+//  CatalogueViewModelTests.swift
 //  UnmissableTests-ExampleTests
 //
 //  Created by William Boles on 18/10/2026.
@@ -10,9 +10,16 @@ import Testing
 
 @testable import UnmissableTests_Example
 
-struct ListingsViewModelTests {
+struct CatalogueViewModelTests {
 
     // MARK: - Load
+
+    @Test("Given no load has been made, when checking the state, then it is loading")
+    func stateBeforeLoad() async throws {
+        let sut = createSUT()
+
+        #expect(sut.state == .loading)
+    }
 
     @Test("Given listings are loaded, when the load is made, then the listing service is asked for listings")
     func loadListingsRequest() async throws {
@@ -47,8 +54,12 @@ struct ListingsViewModelTests {
     @Test("Given listings are loaded, when that load is successful, then a row is created for each listing")
     func successfulLoad() async throws {
         let listingService = StubListingService()
-        listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"),
-                                                              availability: .available)])
+        listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01",
+                                                                              title: "Dracula",
+                                                                              author: .testData(firstName: "Bram",
+                                                                                                lastName: "Stoker"),
+                                                                              coverImageName: "dracula"),
+                                                              availability: .onLoan)])
         let loanService = StubLoanService()
         loanService.loansResponse = .success([])
 
@@ -57,10 +68,11 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
-                                                               authorName: "test_lastName, test_firstName",
-                                                               availability: .available,
-                                                               action: .borrow)]
+        let expectedRows: [CatalogueViewModel.Row] = [.testData(id: "book-01",
+                                                               title: "Dracula",
+                                                               authorName: "Stoker, Bram",
+                                                               coverImageName: "dracula",
+                                                               availability: .onLoan)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -92,43 +104,20 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-04",
-                                                               title: "Emma",
-                                                               authorName: "Austen, Jane",
-                                                               availability: .available,
-                                                               action: .borrow),
-                                                     .testData(id: "book-02",
-                                                               title: "Pride and Prejudice",
-                                                               authorName: "Austen, Jane",
-                                                               availability: .available,
-                                                               action: .borrow),
-                                                     .testData(id: "book-03",
-                                                               title: "Jane Eyre",
-                                                               authorName: "Brontë, Charlotte",
-                                                               availability: .available,
-                                                               action: .borrow),
-                                                     .testData(id: "book-01",
-                                                               title: "Wuthering Heights",
-                                                               authorName: "Brontë, Emily",
-                                                               availability: .available,
-                                                               action: .borrow)]
-
-        #expect(sut.state == .loaded(expectedRows))
+        #expect(sut.state.rows.map(\.id) == ["book-04", "book-02", "book-03", "book-01"])
     }
 
-    @Test("Given listings are loaded, when a listing isn't on loan to the user, then its row's availability and action come from the listing",
+    @Test("Given listings are loaded, when a listing isn't on loan to the user, then its row's availability comes from the listing",
           arguments: [
-            (.available, .available, .borrow),
-            (.onLoan, .onLoan, nil),
-            (.onLoanToYou, .available, .borrow)
-          ] as [(Availability, ListingsViewModel.Row.Availability, ListingsViewModel.Row.Action?)]
+            (.available, .available),
+            (.onLoan, .onLoan),
+            (.onLoanToYou, .available)
+          ] as [(Availability, CatalogueViewModel.Row.Availability)]
     )
     func loadNotLoanedListing(listingAvailability: Availability,
-                              expectedAvailability: ListingsViewModel.Row.Availability,
-                              expectedAction: ListingsViewModel.Row.Action?) async throws {
+                              expectedAvailability: CatalogueViewModel.Row.Availability) async throws {
         let listingService = StubListingService()
-        listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"),
-                                                              availability: listingAvailability)])
+        listingService.listingsResponse = .success([.testData(availability: listingAvailability)])
         let loanService = StubLoanService()
         loanService.loansResponse = .success([])
 
@@ -137,15 +126,12 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
-                                                               authorName: "test_lastName, test_firstName",
-                                                               availability: expectedAvailability,
-                                                               action: expectedAction)]
+        let row = try #require(sut.state.rows.first)
 
-        #expect(sut.state == .loaded(expectedRows))
+        #expect(row.availability == expectedAvailability)
     }
 
-    @Test("Given listings are loaded, when a listing is on loan to the user, then its row is on loan to you and can be returned",
+    @Test("Given listings are loaded, when a listing is on loan to the user, then its row is on loan to you",
           arguments: [
             .available,
             .onLoan,
@@ -164,12 +150,9 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
-                                                               authorName: "test_lastName, test_firstName",
-                                                               availability: .onLoanToYou,
-                                                               action: .return)]
+        let row = try #require(sut.state.rows.first)
 
-        #expect(sut.state == .loaded(expectedRows))
+        #expect(row.availability == .onLoanToYou)
     }
 
     @Test("Given listings are loaded, when the listings retrieval fails, then the state is failed")
@@ -199,48 +182,50 @@ struct ListingsViewModelTests {
         #expect(sut.state == .failed)
     }
 
-    // MARK: - Borrow
+    // MARK: - BorrowBook
 
     @Test("Given a row is borrowed, when the borrow is made, then the loan service is asked to borrow that row's book and the loans are refreshed")
-    func borrowRequest() async throws {
+    func borrowBookRequest() async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
         let loanService = StubLoanService()
         loanService.loansResponse = .success([])
-        loanService.borrowBookResponse = .success(.testData(book: .testData(id: "book-01")))
+        loanService.borrowBookResponse = .success(.testData())
 
         let sut = createSUT(listingService: listingService,
                             loanService: loanService)
 
         await sut.load()
-        await sut.borrow(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.borrowBook(row)
 
         #expect(loanService.events == [.loans, .borrowBook(.testData(id: "book-01")), .loans])
     }
 
-    @Test("Given a row is borrowed, when that borrow is successful, then the row is on loan to you and can be returned")
-    func successfulBorrow() async throws {
+    @Test("Given a row is borrowed, when that borrow is successful, then the row is on loan to you")
+    func successfulBorrowBook() async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
         let loanService = StubLoanService()
         loanService.loansResponse = .success([])
-        loanService.borrowBookResponse = .success(.testData(book: .testData(id: "book-01")))
+        loanService.borrowBookResponse = .success(.testData())
 
         let sut = createSUT(listingService: listingService,
                             loanService: loanService)
 
         await sut.load()
 
+        let row = try #require(sut.state.rows.first)
+
         loanService.loansResponse = .success([.testData(book: .testData(id: "book-01"))])
 
-        await sut.borrow(.testData(id: "book-01"))
+        await sut.borrowBook(row)
 
-        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
-                                                               authorName: "test_lastName, test_firstName",
-                                                               availability: .onLoanToYou,
-                                                               action: .return)]
+        let updatedRow = try #require(sut.state.rows.first)
 
-        #expect(sut.state == .loaded(expectedRows))
+        #expect(updatedRow.availability == .onLoanToYou)
     }
 
     @Test("Given a row is borrowed, when that borrow fails, then the matching alert is set",
@@ -248,15 +233,15 @@ struct ListingsViewModelTests {
             [
               .loanLimitReached,
               .failed
-            ] as [BorrowBookError],
+            ] as [BorrowBookServiceError],
             [
               .loanLimitReached,
               .borrowFailed
-            ] as [ListingsViewModel.Alert]
+            ] as [CatalogueViewModel.Alert]
           )
     )
-    func failedBorrow(borrowError: BorrowBookError,
-                      expectedAlert: ListingsViewModel.Alert) async throws {
+    func failedBorrowBook(borrowError: BorrowBookServiceError,
+                      expectedAlert: CatalogueViewModel.Alert) async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
         let loanService = StubLoanService()
@@ -267,13 +252,58 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.borrow(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.borrowBook(row)
 
         #expect(sut.alert == expectedAlert)
     }
 
+    @Test("Given a row is borrowed, when that borrow fails, then the loans aren't refreshed")
+    func failedBorrowBookDoesNotRefreshLoans() async throws {
+        let listingService = StubListingService()
+        listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
+        let loanService = StubLoanService()
+        loanService.loansResponse = .success([])
+        loanService.borrowBookResponse = .failure(.failed)
+
+        let sut = createSUT(listingService: listingService,
+                            loanService: loanService)
+
+        await sut.load()
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.borrowBook(row)
+
+        #expect(loanService.events == [.loans, .borrowBook(.testData(id: "book-01"))])
+    }
+
+    @Test("Given a row is borrowed, when that borrow is successful but the loans refresh fails, then the state is failed")
+    func successfulBorrowBookWithFailedRefresh() async throws {
+        let listingService = StubListingService()
+        listingService.listingsResponse = .success([.testData()])
+        let loanService = StubLoanService()
+        loanService.loansResponse = .success([])
+        loanService.borrowBookResponse = .success(.testData())
+
+        let sut = createSUT(listingService: listingService,
+                            loanService: loanService)
+
+        await sut.load()
+
+        let row = try #require(sut.state.rows.first)
+
+        loanService.loansResponse = .failure(.failed)
+
+        await sut.borrowBook(row)
+
+        #expect(sut.state == .failed)
+    }
+
     @Test("Given a row is borrowed, when that row doesn't match a loaded listing, then the loan service isn't asked to borrow")
-    func borrowUnknownRow() async throws {
+    func borrowBookWithUnknownRow() async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
         let loanService = StubLoanService()
@@ -283,7 +313,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.borrow(.testData(id: "book-99"))
+        await sut.borrowBook(.testData(id: "book-99"))
 
         #expect(loanService.events == [.loans])
     }
@@ -302,15 +332,19 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
 
         #expect(loanService.events == [.loans, .returnBook(.testData(id: "book-01")), .loans])
     }
 
-    @Test("Given a row is returned, when that return is successful, then the row is available and can be borrowed")
+    @Test("Given a row is returned, when that return is successful, then the row is available")
     func successfulReturnBook() async throws {
         let listingService = StubListingService()
-        listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
+        listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"),
+                                                              availability: .onLoanToYou)])
         let loanService = StubLoanService()
         loanService.loansResponse = .success([.testData(book: .testData(id: "book-01"))])
         loanService.returnBookResponse = .success(())
@@ -320,16 +354,15 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
+        let row = try #require(sut.state.rows.first)
+
         loanService.loansResponse = .success([])
 
-        await sut.returnBook(.testData(id: "book-01"))
+        await sut.returnBook(row)
 
-        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
-                                                               authorName: "test_lastName, test_firstName",
-                                                               availability: .available,
-                                                               action: .borrow)]
+        let updatedRow = try #require(sut.state.rows.first)
 
-        #expect(sut.state == .loaded(expectedRows))
+        #expect(updatedRow.availability == .available)
     }
 
     @Test("Given a row is returned, when that return fails, then the return failed alert is set")
@@ -344,13 +377,58 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
 
         #expect(sut.alert == .returnFailed)
     }
 
+    @Test("Given a row is returned, when that return fails, then the loans aren't refreshed")
+    func failedReturnBookDoesNotRefreshLoans() async throws {
+        let listingService = StubListingService()
+        listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
+        let loanService = StubLoanService()
+        loanService.loansResponse = .success([.testData(book: .testData(id: "book-01"))])
+        loanService.returnBookResponse = .failure(.failed)
+
+        let sut = createSUT(listingService: listingService,
+                            loanService: loanService)
+
+        await sut.load()
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
+
+        #expect(loanService.events == [.loans, .returnBook(.testData(id: "book-01"))])
+    }
+
+    @Test("Given a row is returned, when that return is successful but the loans refresh fails, then the state is failed")
+    func successfulReturnBookWithFailedRefresh() async throws {
+        let listingService = StubListingService()
+        listingService.listingsResponse = .success([.testData()])
+        let loanService = StubLoanService()
+        loanService.loansResponse = .success([.testData()])
+        loanService.returnBookResponse = .success(())
+
+        let sut = createSUT(listingService: listingService,
+                            loanService: loanService)
+
+        await sut.load()
+
+        let row = try #require(sut.state.rows.first)
+
+        loanService.loansResponse = .failure(.failed)
+
+        await sut.returnBook(row)
+
+        #expect(sut.state == .failed)
+    }
+
     @Test("Given a row is returned, when that row doesn't match a loaded listing, then the loan service isn't asked to return")
-    func returnUnknownRow() async throws {
+    func returnBookWithUnknownRow() async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
         let loanService = StubLoanService()
@@ -386,7 +464,10 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
 
         #expect(sut.isShowingAlert == true)
     }
@@ -403,19 +484,37 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
 
         sut.isShowingAlert = false
 
         #expect(sut.alert == nil)
     }
+
+    // MARK: - RowAction
+
+    @Test("Given a row, when checking its action, then the action follows from the row's availability",
+          arguments: [
+            (.available, .borrow),
+            (.onLoan, nil),
+            (.onLoanToYou, .return)
+          ] as [(CatalogueViewModel.Row.Availability, CatalogueViewModel.Row.Action?)]
+    )
+    func rowAction(availability: CatalogueViewModel.Row.Availability,
+                   expectedAction: CatalogueViewModel.Row.Action?) {
+        let sut = CatalogueViewModel.Row.testData(availability: availability)
+
+        #expect(sut.action == expectedAction)
+    }
 }
 
-extension ListingsViewModelTests {
+extension CatalogueViewModelTests {
     func createSUT(listingService: ListingService = StubListingService(),
-                   loanService: LoanService? = nil) -> ListingsViewModel {
-        // `StubLoanService` is main actor-isolated, so it can't be created in a default argument.
-        ListingsViewModel(listingService: listingService,
-                          loanService: loanService ?? StubLoanService())
+                   loanService: LoanService = StubLoanService()) -> CatalogueViewModel {
+        CatalogueViewModel(listingService: listingService,
+                          loanService: loanService)
     }
 }

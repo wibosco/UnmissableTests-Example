@@ -1,5 +1,5 @@
 //
-//  ListingsViewModel.swift
+//  CatalogueViewModel.swift
 //  UnmissableTests-Example
 //
 //  Created by William Boles on 17/10/2026.
@@ -9,7 +9,7 @@ import Foundation
 import Observation
 
 @Observable
-final class ListingsViewModel {
+final class CatalogueViewModel {
     struct Row: Identifiable, Equatable {
         enum Availability: Equatable {
             case available
@@ -27,13 +27,31 @@ final class ListingsViewModel {
         let authorName: String
         let coverImageName: String
         let availability: Availability
-        let action: Action?
+
+        var action: Action? {
+            switch availability {
+            case .available:
+                .borrow
+            case .onLoan:
+                nil
+            case .onLoanToYou:
+                .return
+            }
+        }
     }
 
     enum State: Equatable {
         case loading
         case loaded([Row])
         case failed
+
+        var rows: [Row] {
+            guard case .loaded(let rows) = self else {
+                return []
+            }
+
+            return rows
+        }
     }
 
     enum Alert: Equatable {
@@ -79,10 +97,10 @@ final class ListingsViewModel {
             return
         }
 
-        await updateState()
+        await refreshLoans()
     }
 
-    private func updateState() async {
+    private func refreshLoans() async {
         do {
             let loanedBookIDs = Set(try await loanService.loans().map(\.book.id))
 
@@ -101,42 +119,39 @@ final class ListingsViewModel {
 
     private func row(for listing: Listing,
                      loanedBookIDs: Set<String>) -> Row {
-        let availability: Row.Availability
-        let action: Row.Action?
-
-        // The loan cache, rather than the catalogue, is the source of truth for the user's own loans.
-        if loanedBookIDs.contains(listing.book.id) {
-            availability = .onLoanToYou
-            action = .return
-        } else {
-            switch listing.availability {
-            case .available, .onLoanToYou:
-                availability = .available
-                action = .borrow
-            case .onLoan:
-                availability = .onLoan
-                action = nil
-            }
-        }
-
-        return Row(id: listing.book.id,
-                   title: listing.book.title,
-                   authorName: listing.book.author.fullName,
-                   coverImageName: listing.book.coverImageName,
-                   availability: availability,
-                   action: action)
+        Row(id: listing.book.id,
+            title: listing.book.title,
+            authorName: listing.book.author.lastNameFirst,
+            coverImageName: listing.book.coverImageName,
+            availability: availability(for: listing,
+                                       loanedBookIDs: loanedBookIDs))
     }
 
-    // MARK: - Lending
+    private func availability(for listing: Listing,
+                              loanedBookIDs: Set<String>) -> Row.Availability {
+        // The loan cache, rather than the catalogue, is the source of truth for the user's own loans.
+        if loanedBookIDs.contains(listing.book.id) {
+            return .onLoanToYou
+        }
 
-    func borrow(_ row: Row) async {
-        guard let book = listings.first(where: { $0.book.id == row.id })?.book else {
+        switch listing.availability {
+        case .available, .onLoanToYou:
+            return .available
+        case .onLoan:
+            return .onLoan
+        }
+    }
+
+    // MARK: - Borrowing
+
+    func borrowBook(_ row: Row) async {
+        guard let book = loadedBook(for: row) else {
             return
         }
 
         do {
             try await loanService.borrowBook(book)
-            await updateState()
+            await refreshLoans()
         } catch {
             switch error {
             case .loanLimitReached:
@@ -147,22 +162,28 @@ final class ListingsViewModel {
         }
     }
 
+    // MARK: - Returning
+
     func returnBook(_ row: Row) async {
-        guard let book = listings.first(where: { $0.book.id == row.id })?.book else {
+        guard let book = loadedBook(for: row) else {
             return
         }
 
         do {
             try await loanService.returnBook(book)
-            await updateState()
+            await refreshLoans()
         } catch {
             alert = .returnFailed
         }
     }
+
+    private func loadedBook(for row: Row) -> Book? {
+        listings.first(where: { $0.book.id == row.id })?.book
+    }
 }
 
 private extension Author {
-    var fullName: String {
+    var lastNameFirst: String {
         "\(lastName), \(firstName)"
     }
 }

@@ -14,6 +14,13 @@ struct LoansViewModelTests {
 
     // MARK: - Load
 
+    @Test("Given no load has been made, when checking the state, then it is loading")
+    func stateBeforeLoad() async throws {
+        let sut = createSUT()
+
+        #expect(sut.state == .loading)
+    }
+
     @Test("Given loans are loaded, when the load is made, then the loan service is asked for loans and whether each one is overdue")
     func loadRequest() async throws {
         let loanService = StubLoanService()
@@ -35,7 +42,11 @@ struct LoansViewModelTests {
     )
     func successfulLoad(isOverdue: Bool) async throws {
         let loanService = StubLoanService()
-        loanService.loansResponse = .success([.testData(book: .testData(id: "book-01"),
+        loanService.loansResponse = .success([.testData(book: .testData(id: "book-01",
+                                                                        title: "Dracula",
+                                                                        author: .testData(firstName: "Bram",
+                                                                                          lastName: "Stoker"),
+                                                                        coverImageName: "dracula"),
                                                         dueDate: Date(timeIntervalSince1970: 100))])
         loanService.isOverdueResponse = isOverdue
 
@@ -44,7 +55,9 @@ struct LoansViewModelTests {
         await sut.load()
 
         let expectedRows: [LoansViewModel.Row] = [.testData(id: "book-01",
-                                                            authorName: "test_lastName, test_firstName",
+                                                            title: "Dracula",
+                                                            authorName: "Stoker, Bram",
+                                                            coverImageName: "dracula",
                                                             dueDate: Date(timeIntervalSince1970: 100),
                                                             isOverdue: isOverdue)]
 
@@ -85,33 +98,7 @@ struct LoansViewModelTests {
 
         await sut.load()
 
-        let expectedRows: [LoansViewModel.Row] = [.testData(id: "book-05",
-                                                            title: "Mansfield Park",
-                                                            authorName: "Austen, Jane",
-                                                            dueDate: Date(timeIntervalSince1970: 100),
-                                                            isOverdue: false),
-                                                  .testData(id: "book-04",
-                                                            title: "Pride and Prejudice",
-                                                            authorName: "Austen, Jane",
-                                                            dueDate: Date(timeIntervalSince1970: 100),
-                                                            isOverdue: false),
-                                                  .testData(id: "book-03",
-                                                            title: "Jane Eyre",
-                                                            authorName: "Brontë, Charlotte",
-                                                            dueDate: Date(timeIntervalSince1970: 100),
-                                                            isOverdue: false),
-                                                  .testData(id: "book-02",
-                                                            title: "Wuthering Heights",
-                                                            authorName: "Brontë, Emily",
-                                                            dueDate: Date(timeIntervalSince1970: 100),
-                                                            isOverdue: false),
-                                                  .testData(id: "book-01",
-                                                            title: "Emma",
-                                                            authorName: "Austen, Jane",
-                                                            dueDate: Date(timeIntervalSince1970: 200),
-                                                            isOverdue: false)]
-
-        #expect(sut.state == .loaded(expectedRows))
+        #expect(sut.state.rows.map(\.id) == ["book-05", "book-04", "book-03", "book-02", "book-01"])
     }
 
     @Test("Given loans are loaded, when that load fails, then the state is failed")
@@ -139,9 +126,11 @@ struct LoansViewModelTests {
 
         await sut.load()
 
+        let row = try #require(sut.state.rows.first)
+
         loanService.loansResponse = .success([])
 
-        await sut.returnBook(.testData(id: "book-01"))
+        await sut.returnBook(row)
 
         #expect(loanService.events == [.loans, .isOverdue(.testData(book: .testData(id: "book-01"))), .returnBook(.testData(id: "book-01")), .loans])
     }
@@ -157,9 +146,11 @@ struct LoansViewModelTests {
 
         await sut.load()
 
+        let row = try #require(sut.state.rows.first)
+
         loanService.loansResponse = .success([])
 
-        await sut.returnBook(.testData(id: "book-01"))
+        await sut.returnBook(row)
 
         #expect(sut.state == .loaded([]))
     }
@@ -174,13 +165,54 @@ struct LoansViewModelTests {
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
 
         #expect(sut.alert == .returnFailed)
     }
 
+    @Test("Given a row is returned, when that return fails, then the loans aren't refreshed")
+    func failedReturnBookDoesNotRefreshLoans() async throws {
+        let loanService = StubLoanService()
+        loanService.loansResponse = .success([.testData(book: .testData(id: "book-01"))])
+        loanService.isOverdueResponse = false
+        loanService.returnBookResponse = .failure(.failed)
+
+        let sut = createSUT(loanService: loanService)
+
+        await sut.load()
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
+
+        #expect(loanService.events == [.loans, .isOverdue(.testData(book: .testData(id: "book-01"))), .returnBook(.testData(id: "book-01"))])
+    }
+
+    @Test("Given a row is returned, when that return is successful but the loans refresh fails, then the state is failed")
+    func successfulReturnBookWithFailedRefresh() async throws {
+        let loanService = StubLoanService()
+        loanService.loansResponse = .success([.testData()])
+        loanService.isOverdueResponse = false
+        loanService.returnBookResponse = .success(())
+
+        let sut = createSUT(loanService: loanService)
+
+        await sut.load()
+
+        let row = try #require(sut.state.rows.first)
+
+        loanService.loansResponse = .failure(.failed)
+
+        await sut.returnBook(row)
+
+        #expect(sut.state == .failed)
+    }
+
     @Test("Given a row is returned, when that row doesn't match a loaded loan, then the loan service isn't asked to return")
-    func returnUnknownRow() async throws {
+    func returnBookWithUnknownRow() async throws {
         let loanService = StubLoanService()
         loanService.loansResponse = .success([])
 
@@ -211,7 +243,10 @@ struct LoansViewModelTests {
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
 
         #expect(sut.isShowingAlert == true)
     }
@@ -226,7 +261,10 @@ struct LoansViewModelTests {
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(.testData(id: "book-01"))
+
+        let row = try #require(sut.state.rows.first)
+
+        await sut.returnBook(row)
 
         sut.isShowingAlert = false
 

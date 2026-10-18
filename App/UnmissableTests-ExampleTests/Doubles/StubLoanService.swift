@@ -20,8 +20,8 @@ final class StubLoanService: LoanService {
     private(set) var events = [Event]()
     
     var loansResponse: Result<[Loan], LoansServiceError>!
-    var borrowBookResponse: Result<Loan, BorrowBookError>!
-    var returnBookResponse: Result<Void, ReturnBookError>!
+    var borrowBookResponse: Result<Loan, BorrowBookServiceError>!
+    var returnBookResponse: Result<Void, ReturnBookServiceError>!
     var isOverdueResponse: Bool!
     
     // MARK: - LoanService
@@ -32,13 +32,13 @@ final class StubLoanService: LoanService {
         return try loansResponse.get()
     }
     
-    func borrowBook(_ book: Book) async throws(BorrowBookError) -> Loan {
+    func borrowBook(_ book: Book) async throws(BorrowBookServiceError) -> Loan {
         events.append(.borrowBook(book))
         
         return try borrowBookResponse.get()
     }
     
-    func returnBook(_ book: Book) async throws(ReturnBookError) {
+    func returnBook(_ book: Book) async throws(ReturnBookServiceError) {
         events.append(.returnBook(book))
         
         try returnBookResponse.get()

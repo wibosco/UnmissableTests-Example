@@ -9,6 +9,6 @@ import Foundation
 
 nonisolated struct LoanDTO: Decodable {
     let book: BookDTO
-    let borrowedAt: Date
+    let borrowedDate: Date
     let dueDate: Date
 }

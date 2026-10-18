@@ -11,8 +11,8 @@ protocol LoanService {
     func loans() async throws(LoansServiceError) -> [Loan]
 
     @discardableResult
-    func borrowBook(_ book: Book) async throws(BorrowBookError) -> Loan
-    func returnBook(_ book: Book) async throws(ReturnBookError)
+    func borrowBook(_ book: Book) async throws(BorrowBookServiceError) -> Loan
+    func returnBook(_ book: Book) async throws(ReturnBookServiceError)
 
     func isOverdue(_ loan: Loan) -> Bool
 }
@@ -21,23 +21,23 @@ enum LoansServiceError: Error, Equatable {
     case failed
 }
 
-enum BorrowBookError: Error, Equatable {
+enum BorrowBookServiceError: Error, Equatable {
     case loanLimitReached
     case failed
 }
 
-enum ReturnBookError: Error, Equatable {
+enum ReturnBookServiceError: Error, Equatable {
     case failed
 }
 
 final class DefaultLoanService: LoanService {
-    private let repository: CatalogueRepository
+    private let repository: LibraryRepository
     private let now: () -> Date
     private var cachedLoans: [Loan]?
     
     // MARK: - Init
     
-    init(repository: CatalogueRepository,
+    init(repository: LibraryRepository,
          now: @escaping () -> Date) {
         self.repository = repository
         self.now = now
@@ -69,16 +69,16 @@ final class DefaultLoanService: LoanService {
     // MARK: - Borrowing
 
     @discardableResult
-    func borrowBook(_ book: Book) async throws(BorrowBookError) -> Loan {
+    func borrowBook(_ book: Book) async throws(BorrowBookServiceError) -> Loan {
         let loan: Loan
 
         do {
-            loan = try await repository.checkOutBook(book.id)
+            loan = try await repository.createLoan(forBookID: book.id)
         } catch {
             switch error {
             case .loanLimitReached:
                 throw .loanLimitReached
-            case .alreadyBorrowed, .bookUnavailable, .failed:
+            case .bookUnavailable, .failed:
                 throw .failed
             }
         }
@@ -91,9 +91,9 @@ final class DefaultLoanService: LoanService {
 
     // MARK: - Returning
 
-    func returnBook(_ book: Book) async throws(ReturnBookError) {
+    func returnBook(_ book: Book) async throws(ReturnBookServiceError) {
         do {
-            _ = try await repository.checkInBook(book.id)
+            _ = try await repository.deleteLoan(forBookID: book.id)
         } catch {
             switch error {
             case .notBorrowed, .failed:

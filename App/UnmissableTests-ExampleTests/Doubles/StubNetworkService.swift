@@ -11,7 +11,7 @@ import Foundation
 
 final class StubNetworkService: NetworkService {
     enum Event: Equatable {
-        case send(URLRequest, Range<Int>)
+        case send(URLRequest)
     }
     
     private(set) var events = [Event]()
@@ -21,10 +21,9 @@ final class StubNetworkService: NetworkService {
     // MARK: - NetworkService
     
     func send<Success: Decodable & Sendable, Failure: Decodable & Sendable>(_ request: URLRequest,
-                                                                            acceptableStatusCodes: Range<Int>,
                                                                             success: Success.Type,
                                                                             failure: Failure.Type) async throws(NetworkServiceError<Failure>) -> Success {
-        events.append(.send(request, acceptableStatusCodes))
+        events.append(.send(request))
         
         switch sendResponse! {
         case .success(let value):

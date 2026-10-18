@@ -23,6 +23,14 @@ final class LoansViewModel {
         case loading
         case loaded([Row])
         case failed
+
+        var rows: [Row] {
+            guard case .loaded(let rows) = self else {
+                return []
+            }
+
+            return rows
+        }
     }
 
     enum Alert: Equatable {
@@ -34,14 +42,7 @@ final class LoansViewModel {
 
     private let loanService: LoanService
     
-    @ObservationIgnored private var books = [String: Book]()
-
-    private static let sortOrder: [SortDescriptor<Loan>] = [
-        SortDescriptor(\Loan.dueDate),
-        SortDescriptor(\Loan.book.author.lastName),
-        SortDescriptor(\Loan.book.author.firstName),
-        SortDescriptor(\Loan.book.title)
-    ]
+    @ObservationIgnored private var loans = [Loan]()
 
     var isShowingAlert: Bool {
         get {
@@ -64,21 +65,26 @@ final class LoansViewModel {
 
     func load() async {
         do {
-            let loans = try await loanService.loans()
-
-            books = Dictionary(uniqueKeysWithValues: loans.map { ($0.book.id, $0.book) })
-            state = .loaded(loans
-                .sorted(using: Self.sortOrder)
-                .map { row(for: $0) })
+            loans = try await loanService.loans()
         } catch {
             state = .failed
+            return
         }
+
+        state = .loaded(loans
+            .sorted(using: [
+                SortDescriptor(\Loan.dueDate),
+                SortDescriptor(\Loan.book.author.lastName),
+                SortDescriptor(\Loan.book.author.firstName),
+                SortDescriptor(\Loan.book.title)
+            ])
+            .map { row(for: $0) })
     }
 
     private func row(for loan: Loan) -> Row {
         Row(id: loan.book.id,
             title: loan.book.title,
-            authorName: loan.book.author.fullName,
+            authorName: loan.book.author.lastNameFirst,
             coverImageName: loan.book.coverImageName,
             dueDate: loan.dueDate,
             isOverdue: loanService.isOverdue(loan))
@@ -87,7 +93,7 @@ final class LoansViewModel {
     // MARK: - Returning
 
     func returnBook(_ row: Row) async {
-        guard let book = books[row.id] else {
+        guard let book = loadedBook(for: row) else {
             return
         }
 
@@ -98,10 +104,14 @@ final class LoansViewModel {
             alert = .returnFailed
         }
     }
+
+    private func loadedBook(for row: Row) -> Book? {
+        loans.first(where: { $0.book.id == row.id })?.book
+    }
 }
 
 private extension Author {
-    var fullName: String {
+    var lastNameFirst: String {
         "\(lastName), \(firstName)"
     }
 }

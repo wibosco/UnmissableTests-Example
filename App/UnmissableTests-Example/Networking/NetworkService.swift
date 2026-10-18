@@ -16,7 +16,6 @@ enum NetworkServiceError<Failure: Decodable & Sendable>: Error {
 
 protocol NetworkService {
     func send<Success: Decodable & Sendable, Failure: Decodable & Sendable>(_ request: URLRequest,
-                                                                            acceptableStatusCodes: Range<Int>,
                                                                             success: Success.Type,
                                                                             failure: Failure.Type) async throws(NetworkServiceError<Failure>) -> Success
 }
@@ -24,6 +23,7 @@ protocol NetworkService {
 final class DefaultNetworkService: NetworkService {
     private let session: URLSession
     private let decoder: JSONDecoder
+    private let acceptableStatusCodes = 200..<300
     
     // MARK: - Init
     
@@ -39,7 +39,6 @@ final class DefaultNetworkService: NetworkService {
     // MARK: - Send
     
     func send<Success: Decodable & Sendable, Failure: Decodable & Sendable>(_ request: URLRequest,
-                                                                            acceptableStatusCodes: Range<Int>,
                                                                             success: Success.Type,
                                                                             failure: Failure.Type) async throws(NetworkServiceError<Failure>) -> Success {
         let (data, response): (Data, URLResponse)

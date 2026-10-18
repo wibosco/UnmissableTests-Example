@@ -8,26 +8,26 @@
 import Foundation
 
 protocol ListingService {
-    func listings() async throws(ListingServiceError) -> [Listing]
+    func listings() async throws(ListingsServiceError) -> [Listing]
 }
 
-enum ListingServiceError: Error, Equatable {
+enum ListingsServiceError: Error, Equatable {
     case failed
 }
 
 final class DefaultListingService: ListingService {
-    private let repository: CatalogueRepository
+    private let repository: LibraryRepository
     private var cachedListings: [Listing]?
     
     // MARK: - Init
     
-    init(repository: CatalogueRepository) {
+    init(repository: LibraryRepository) {
         self.repository = repository
     }
     
-    // MARK: - Listing
+    // MARK: - Listings
 
-    func listings() async throws(ListingServiceError) -> [Listing] {
+    func listings() async throws(ListingsServiceError) -> [Listing] {
         if let cachedListings {
             return cachedListings
         }

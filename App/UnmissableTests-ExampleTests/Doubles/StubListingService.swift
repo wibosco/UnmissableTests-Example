@@ -16,11 +16,11 @@ final class StubListingService: ListingService {
     
     private(set) var events = [Event]()
     
-    var listingsResponse: Result<[Listing], ListingServiceError>!
+    var listingsResponse: Result<[Listing], ListingsServiceError>!
     
     // MARK: - ListingService
     
-    func listings() async throws(ListingServiceError) -> [Listing] {
+    func listings() async throws(ListingsServiceError) -> [Listing] {
         events.append(.listings)
         
         return try listingsResponse.get()

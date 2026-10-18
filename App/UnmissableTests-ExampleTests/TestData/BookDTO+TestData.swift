@@ -14,7 +14,7 @@ nonisolated extension BookDTO {
                          author: AuthorDTO = .testData(),
                          isbn: String = "test_isbn",
                          coverImageName: String = "test_coverImageName",
-                         availability: Status = .testData()) -> BookDTO {
+                         availability: AvailabilityDTO = .testData()) -> BookDTO {
         BookDTO(id: id,
                 title: title,
                 author: author,
@@ -24,8 +24,8 @@ nonisolated extension BookDTO {
     }
 }
 
-nonisolated extension BookDTO.Status {
-    static func testData() -> BookDTO.Status {
+nonisolated extension BookDTO.AvailabilityDTO {
+    static func testData() -> BookDTO.AvailabilityDTO {
         .available
     }
 }

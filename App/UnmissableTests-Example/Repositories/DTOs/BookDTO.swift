@@ -8,7 +8,7 @@
 import Foundation
 
 nonisolated struct BookDTO: Decodable {
-    enum Status: String, Decodable {
+    enum AvailabilityDTO: String, Decodable {
         case available
         case onLoan = "on_loan"
         case onLoanToYou = "on_loan_to_you"
@@ -24,5 +24,5 @@ nonisolated struct BookDTO: Decodable {
     let author: AuthorDTO
     let isbn: String
     let coverImageName: String
-    let availability: Status
+    let availability: AvailabilityDTO
 }

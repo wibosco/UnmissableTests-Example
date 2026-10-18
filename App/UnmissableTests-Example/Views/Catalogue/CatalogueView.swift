@@ -1,29 +1,28 @@
 //
-//  ListingsView.swift
+//  CatalogueView.swift
 //  UnmissableTests-Example
 //
 //  Created by William Boles on 17/10/2026.
 //
 
-import MockServer
 import SwiftUI
 
-struct ListingsView: View {
-    @Bindable var viewModel: ListingsViewModel
+struct CatalogueView: View {
+    @Bindable var viewModel: CatalogueViewModel
     
     // MARK: - Views
     
     var body: some View {
         NavigationStack {
-            List(rows) { row in
-                CatalogueRow(row: row)
+            List(viewModel.state.rows) { row in
+                ListingRow(row: row)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         if let action = row.action {
                             switch action {
                             case .borrow:
                                 Button("Borrow", systemImage: "book") {
                                     Task {
-                                        await viewModel.borrow(row)
+                                        await viewModel.borrowBook(row)
                                     }
                                 }
                                 .tint(.green)
@@ -56,49 +55,19 @@ struct ListingsView: View {
             .task {
                 await viewModel.load()
             }
-            .alert(viewModel.alert.map(title(for:)) ?? "",
+            .alert(viewModel.alert?.title ?? "",
                    isPresented: $viewModel.isShowingAlert,
                    presenting: viewModel.alert) { _ in
                 Button("OK", role: .cancel) {}
             } message: { alert in
-                Text(message(for: alert))
+                Text(alert.message)
             }
-        }
-    }
-
-    private var rows: [ListingsViewModel.Row] {
-        guard case .loaded(let rows) = viewModel.state else {
-            return []
-        }
-
-        return rows
-    }
-
-    // MARK: - Alert
-
-    private func title(for alert: ListingsViewModel.Alert) -> String {
-        switch alert {
-        case .loanLimitReached:
-            "Loan Limit Reached"
-        case .borrowFailed:
-            "Unable to Borrow"
-        case .returnFailed:
-            "Unable to Return"
-        }
-    }
-
-    private func message(for alert: ListingsViewModel.Alert) -> String {
-        switch alert {
-        case .loanLimitReached:
-            "Return a book before borrowing another."
-        case .borrowFailed, .returnFailed:
-            "Please try again."
         }
     }
 }
 
-private struct CatalogueRow: View {
-    let row: ListingsViewModel.Row
+private struct ListingRow: View {
+    let row: CatalogueViewModel.Row
     
     // MARK: - Views
     
@@ -138,13 +107,28 @@ private struct CatalogueRow: View {
     }
 }
 
-#Preview {
-    let session = DefaultMockServer.session()
-    let networkService = DefaultNetworkService(session: session)
-    let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
-                                                networkService: networkService)
+private extension CatalogueViewModel.Alert {
+    var title: String {
+        switch self {
+        case .loanLimitReached:
+            "Loan Limit Reached"
+        case .borrowFailed:
+            "Unable to Borrow"
+        case .returnFailed:
+            "Unable to Return"
+        }
+    }
 
-    ListingsView(viewModel: ListingsViewModel(listingService: DefaultListingService(repository: repository),
-                                                loanService: DefaultLoanService(repository: repository,
-                                                                         now: Date.init)))
+    var message: String {
+        switch self {
+        case .loanLimitReached:
+            "Return a book before borrowing another."
+        case .borrowFailed, .returnFailed:
+            "Please try again."
+        }
+    }
+}
+
+#Preview {
+    CatalogueView(viewModel: AppDependencies().catalogueViewModel)
 }
