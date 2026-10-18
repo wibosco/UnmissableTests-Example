@@ -43,12 +43,10 @@ struct LoansViewModelTests {
 
         await sut.load()
 
-        let expectedRows = [LoansViewModel.Row(id: "book-01",
-                                               title: "test_title",
-                                               authorName: "test_lastName, test_firstName",
-                                               coverImageName: "test_coverImageName",
-                                               dueDate: Date(timeIntervalSince1970: 100),
-                                               isOverdue: isOverdue)]
+        let expectedRows: [LoansViewModel.Row] = [.testData(id: "book-01",
+                                                            authorName: "test_lastName, test_firstName",
+                                                            dueDate: Date(timeIntervalSince1970: 100),
+                                                            isOverdue: isOverdue)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -87,36 +85,31 @@ struct LoansViewModelTests {
 
         await sut.load()
 
-        let expectedRows = [LoansViewModel.Row(id: "book-05",
-                                               title: "Mansfield Park",
-                                               authorName: "Austen, Jane",
-                                               coverImageName: "test_coverImageName",
-                                               dueDate: Date(timeIntervalSince1970: 100),
-                                               isOverdue: false),
-                            LoansViewModel.Row(id: "book-04",
-                                               title: "Pride and Prejudice",
-                                               authorName: "Austen, Jane",
-                                               coverImageName: "test_coverImageName",
-                                               dueDate: Date(timeIntervalSince1970: 100),
-                                               isOverdue: false),
-                            LoansViewModel.Row(id: "book-03",
-                                               title: "Jane Eyre",
-                                               authorName: "Brontë, Charlotte",
-                                               coverImageName: "test_coverImageName",
-                                               dueDate: Date(timeIntervalSince1970: 100),
-                                               isOverdue: false),
-                            LoansViewModel.Row(id: "book-02",
-                                               title: "Wuthering Heights",
-                                               authorName: "Brontë, Emily",
-                                               coverImageName: "test_coverImageName",
-                                               dueDate: Date(timeIntervalSince1970: 100),
-                                               isOverdue: false),
-                            LoansViewModel.Row(id: "book-01",
-                                               title: "Emma",
-                                               authorName: "Austen, Jane",
-                                               coverImageName: "test_coverImageName",
-                                               dueDate: Date(timeIntervalSince1970: 200),
-                                               isOverdue: false)]
+        let expectedRows: [LoansViewModel.Row] = [.testData(id: "book-05",
+                                                            title: "Mansfield Park",
+                                                            authorName: "Austen, Jane",
+                                                            dueDate: Date(timeIntervalSince1970: 100),
+                                                            isOverdue: false),
+                                                  .testData(id: "book-04",
+                                                            title: "Pride and Prejudice",
+                                                            authorName: "Austen, Jane",
+                                                            dueDate: Date(timeIntervalSince1970: 100),
+                                                            isOverdue: false),
+                                                  .testData(id: "book-03",
+                                                            title: "Jane Eyre",
+                                                            authorName: "Brontë, Charlotte",
+                                                            dueDate: Date(timeIntervalSince1970: 100),
+                                                            isOverdue: false),
+                                                  .testData(id: "book-02",
+                                                            title: "Wuthering Heights",
+                                                            authorName: "Brontë, Emily",
+                                                            dueDate: Date(timeIntervalSince1970: 100),
+                                                            isOverdue: false),
+                                                  .testData(id: "book-01",
+                                                            title: "Emma",
+                                                            authorName: "Austen, Jane",
+                                                            dueDate: Date(timeIntervalSince1970: 200),
+                                                            isOverdue: false)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -148,12 +141,7 @@ struct LoansViewModelTests {
 
         loanService.loansResponse = .success([])
 
-        await sut.returnBook(LoansViewModel.Row(id: "book-01",
-                                                title: "test_title",
-                                                authorName: "test_lastName, test_firstName",
-                                                coverImageName: "test_coverImageName",
-                                                dueDate: Date(timeIntervalSince1970: 0),
-                                                isOverdue: false))
+        await sut.returnBook(.testData(id: "book-01"))
 
         #expect(loanService.events == [.loans, .isOverdue(.testData(book: .testData(id: "book-01"))), .returnBook(.testData(id: "book-01")), .loans])
     }
@@ -171,12 +159,7 @@ struct LoansViewModelTests {
 
         loanService.loansResponse = .success([])
 
-        await sut.returnBook(LoansViewModel.Row(id: "book-01",
-                                                title: "test_title",
-                                                authorName: "test_lastName, test_firstName",
-                                                coverImageName: "test_coverImageName",
-                                                dueDate: Date(timeIntervalSince1970: 0),
-                                                isOverdue: false))
+        await sut.returnBook(.testData(id: "book-01"))
 
         #expect(sut.state == .loaded([]))
     }
@@ -191,12 +174,7 @@ struct LoansViewModelTests {
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(LoansViewModel.Row(id: "book-01",
-                                                title: "test_title",
-                                                authorName: "test_lastName, test_firstName",
-                                                coverImageName: "test_coverImageName",
-                                                dueDate: Date(timeIntervalSince1970: 0),
-                                                isOverdue: false))
+        await sut.returnBook(.testData(id: "book-01"))
 
         #expect(sut.alert == .returnFailed)
     }
@@ -209,12 +187,7 @@ struct LoansViewModelTests {
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(LoansViewModel.Row(id: "book-99",
-                                                title: "test_title",
-                                                authorName: "test_lastName, test_firstName",
-                                                coverImageName: "test_coverImageName",
-                                                dueDate: Date(timeIntervalSince1970: 0),
-                                                isOverdue: false))
+        await sut.returnBook(.testData(id: "book-99"))
 
         #expect(loanService.events == [.loans])
     }
@@ -238,12 +211,7 @@ struct LoansViewModelTests {
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(LoansViewModel.Row(id: "book-01",
-                                                title: "test_title",
-                                                authorName: "test_lastName, test_firstName",
-                                                coverImageName: "test_coverImageName",
-                                                dueDate: Date(timeIntervalSince1970: 0),
-                                                isOverdue: false))
+        await sut.returnBook(.testData(id: "book-01"))
 
         #expect(sut.isShowingAlert == true)
     }
@@ -258,12 +226,7 @@ struct LoansViewModelTests {
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(LoansViewModel.Row(id: "book-01",
-                                                title: "test_title",
-                                                authorName: "test_lastName, test_firstName",
-                                                coverImageName: "test_coverImageName",
-                                                dueDate: Date(timeIntervalSince1970: 0),
-                                                isOverdue: false))
+        await sut.returnBook(.testData(id: "book-01"))
 
         sut.isShowingAlert = false
 

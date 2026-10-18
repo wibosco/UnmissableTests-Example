@@ -57,12 +57,10 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows = [ListingsViewModel.Row(id: "book-01",
-                                                  title: "test_title",
-                                                  authorName: "test_lastName, test_firstName",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .available,
-                                                  action: .borrow)]
+        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
+                                                               authorName: "test_lastName, test_firstName",
+                                                               availability: .available,
+                                                               action: .borrow)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -94,30 +92,26 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows = [ListingsViewModel.Row(id: "book-04",
-                                                  title: "Emma",
-                                                  authorName: "Austen, Jane",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .available,
-                                                  action: .borrow),
-                            ListingsViewModel.Row(id: "book-02",
-                                                  title: "Pride and Prejudice",
-                                                  authorName: "Austen, Jane",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .available,
-                                                  action: .borrow),
-                            ListingsViewModel.Row(id: "book-03",
-                                                  title: "Jane Eyre",
-                                                  authorName: "Brontë, Charlotte",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .available,
-                                                  action: .borrow),
-                            ListingsViewModel.Row(id: "book-01",
-                                                  title: "Wuthering Heights",
-                                                  authorName: "Brontë, Emily",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .available,
-                                                  action: .borrow)]
+        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-04",
+                                                               title: "Emma",
+                                                               authorName: "Austen, Jane",
+                                                               availability: .available,
+                                                               action: .borrow),
+                                                     .testData(id: "book-02",
+                                                               title: "Pride and Prejudice",
+                                                               authorName: "Austen, Jane",
+                                                               availability: .available,
+                                                               action: .borrow),
+                                                     .testData(id: "book-03",
+                                                               title: "Jane Eyre",
+                                                               authorName: "Brontë, Charlotte",
+                                                               availability: .available,
+                                                               action: .borrow),
+                                                     .testData(id: "book-01",
+                                                               title: "Wuthering Heights",
+                                                               authorName: "Brontë, Emily",
+                                                               availability: .available,
+                                                               action: .borrow)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -143,12 +137,10 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows = [ListingsViewModel.Row(id: "book-01",
-                                                  title: "test_title",
-                                                  authorName: "test_lastName, test_firstName",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: expectedAvailability,
-                                                  action: expectedAction)]
+        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
+                                                               authorName: "test_lastName, test_firstName",
+                                                               availability: expectedAvailability,
+                                                               action: expectedAction)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -172,12 +164,10 @@ struct ListingsViewModelTests {
 
         await sut.load()
 
-        let expectedRows = [ListingsViewModel.Row(id: "book-01",
-                                                  title: "test_title",
-                                                  authorName: "test_lastName, test_firstName",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .onLoanToYou,
-                                                  action: .return)]
+        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
+                                                               authorName: "test_lastName, test_firstName",
+                                                               availability: .onLoanToYou,
+                                                               action: .return)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -223,12 +213,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.borrow(ListingsViewModel.Row(id: "book-01",
-                                               title: "test_title",
-                                               authorName: "test_lastName, test_firstName",
-                                               coverImageName: "test_coverImageName",
-                                               availability: .available,
-                                               action: .borrow))
+        await sut.borrow(.testData(id: "book-01"))
 
         #expect(loanService.events == [.loans, .borrowBook(.testData(id: "book-01")), .loans])
     }
@@ -248,19 +233,12 @@ struct ListingsViewModelTests {
 
         loanService.loansResponse = .success([.testData(book: .testData(id: "book-01"))])
 
-        await sut.borrow(ListingsViewModel.Row(id: "book-01",
-                                               title: "test_title",
-                                               authorName: "test_lastName, test_firstName",
-                                               coverImageName: "test_coverImageName",
-                                               availability: .available,
-                                               action: .borrow))
+        await sut.borrow(.testData(id: "book-01"))
 
-        let expectedRows = [ListingsViewModel.Row(id: "book-01",
-                                                  title: "test_title",
-                                                  authorName: "test_lastName, test_firstName",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .onLoanToYou,
-                                                  action: .return)]
+        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
+                                                               authorName: "test_lastName, test_firstName",
+                                                               availability: .onLoanToYou,
+                                                               action: .return)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -289,12 +267,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.borrow(ListingsViewModel.Row(id: "book-01",
-                                               title: "test_title",
-                                               authorName: "test_lastName, test_firstName",
-                                               coverImageName: "test_coverImageName",
-                                               availability: .available,
-                                               action: .borrow))
+        await sut.borrow(.testData(id: "book-01"))
 
         #expect(sut.alert == expectedAlert)
     }
@@ -310,12 +283,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.borrow(ListingsViewModel.Row(id: "book-99",
-                                               title: "test_title",
-                                               authorName: "test_lastName, test_firstName",
-                                               coverImageName: "test_coverImageName",
-                                               availability: .available,
-                                               action: .borrow))
+        await sut.borrow(.testData(id: "book-99"))
 
         #expect(loanService.events == [.loans])
     }
@@ -334,12 +302,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(ListingsViewModel.Row(id: "book-01",
-                                                   title: "test_title",
-                                                   authorName: "test_lastName, test_firstName",
-                                                   coverImageName: "test_coverImageName",
-                                                   availability: .onLoanToYou,
-                                                   action: .return))
+        await sut.returnBook(.testData(id: "book-01"))
 
         #expect(loanService.events == [.loans, .returnBook(.testData(id: "book-01")), .loans])
     }
@@ -359,19 +322,12 @@ struct ListingsViewModelTests {
 
         loanService.loansResponse = .success([])
 
-        await sut.returnBook(ListingsViewModel.Row(id: "book-01",
-                                                   title: "test_title",
-                                                   authorName: "test_lastName, test_firstName",
-                                                   coverImageName: "test_coverImageName",
-                                                   availability: .onLoanToYou,
-                                                   action: .return))
+        await sut.returnBook(.testData(id: "book-01"))
 
-        let expectedRows = [ListingsViewModel.Row(id: "book-01",
-                                                  title: "test_title",
-                                                  authorName: "test_lastName, test_firstName",
-                                                  coverImageName: "test_coverImageName",
-                                                  availability: .available,
-                                                  action: .borrow)]
+        let expectedRows: [ListingsViewModel.Row] = [.testData(id: "book-01",
+                                                               authorName: "test_lastName, test_firstName",
+                                                               availability: .available,
+                                                               action: .borrow)]
 
         #expect(sut.state == .loaded(expectedRows))
     }
@@ -388,12 +344,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(ListingsViewModel.Row(id: "book-01",
-                                                   title: "test_title",
-                                                   authorName: "test_lastName, test_firstName",
-                                                   coverImageName: "test_coverImageName",
-                                                   availability: .onLoanToYou,
-                                                   action: .return))
+        await sut.returnBook(.testData(id: "book-01"))
 
         #expect(sut.alert == .returnFailed)
     }
@@ -409,12 +360,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(ListingsViewModel.Row(id: "book-99",
-                                                   title: "test_title",
-                                                   authorName: "test_lastName, test_firstName",
-                                                   coverImageName: "test_coverImageName",
-                                                   availability: .onLoanToYou,
-                                                   action: .return))
+        await sut.returnBook(.testData(id: "book-99"))
 
         #expect(loanService.events == [.loans])
     }
@@ -440,12 +386,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(ListingsViewModel.Row(id: "book-01",
-                                                   title: "test_title",
-                                                   authorName: "test_lastName, test_firstName",
-                                                   coverImageName: "test_coverImageName",
-                                                   availability: .onLoanToYou,
-                                                   action: .return))
+        await sut.returnBook(.testData(id: "book-01"))
 
         #expect(sut.isShowingAlert == true)
     }
@@ -462,12 +403,7 @@ struct ListingsViewModelTests {
                             loanService: loanService)
 
         await sut.load()
-        await sut.returnBook(ListingsViewModel.Row(id: "book-01",
-                                                   title: "test_title",
-                                                   authorName: "test_lastName, test_firstName",
-                                                   coverImageName: "test_coverImageName",
-                                                   availability: .onLoanToYou,
-                                                   action: .return))
+        await sut.returnBook(.testData(id: "book-01"))
 
         sut.isShowingAlert = false
 
