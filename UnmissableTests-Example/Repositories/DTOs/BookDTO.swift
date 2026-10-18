@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct BookDTO: Codable {
+nonisolated struct BookDTO: Codable {
     enum Status: String, Codable {
         case available
         case onLoan = "on_loan"

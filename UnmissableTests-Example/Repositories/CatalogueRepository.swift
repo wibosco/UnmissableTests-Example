@@ -44,7 +44,6 @@ enum CheckInError: Error, Equatable {
 final class DefaultCatalogueRepository: CatalogueRepository {
     private let baseURL: URL
     private let networkService: NetworkService
-    private let decoder: JSONDecoder
 
     // MARK: - Init
 
@@ -52,11 +51,6 @@ final class DefaultCatalogueRepository: CatalogueRepository {
          networkService: NetworkService) {
         self.baseURL = baseURL
         self.networkService = networkService
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
-        self.decoder = decoder
     }
 
     // MARK: - Catalogue
@@ -64,19 +58,16 @@ final class DefaultCatalogueRepository: CatalogueRepository {
     func catalogue() async throws(CatalogueError) -> [Listing] {
         let request = URLRequest(url: baseURL.appending(path: "books"))
 
-        guard let result = try? await networkService.data(for: request) else {
+        do {
+            let bookDTOs = try await networkService.send(request,
+                                                         acceptableStatusCodes: 200..<300,
+                                                         success: [BookDTO].self,
+                                                         failure: Never.self)
+
+            return bookDTOs.map { listing(from: $0) }
+        } catch {
             throw .failed
         }
-
-        let (data, response) = result
-
-        guard (200..<300).contains(response.statusCode),
-              let bookDTOs = try? decoder.decode([BookDTO].self,
-                                                 from: data) else {
-            throw .failed
-        }
-
-        return bookDTOs.map { listing(from: $0) }
     }
 
     // MARK: - Loans
@@ -84,43 +75,39 @@ final class DefaultCatalogueRepository: CatalogueRepository {
     func loans() async throws(LoansError) -> [Loan] {
         let request = URLRequest(url: baseURL.appending(path: "loans"))
 
-        guard let result = try? await networkService.data(for: request) else {
+        do {
+            let loanDTOs = try await networkService.send(request,
+                                                         acceptableStatusCodes: 200..<300,
+                                                         success: [LoanDTO].self,
+                                                         failure: Never.self)
+
+            return loanDTOs.map { loan(from: $0) }
+        } catch {
             throw .failed
         }
-
-        let (data, response) = result
-
-        guard (200..<300).contains(response.statusCode),
-              let loanDTOs = try? decoder.decode([LoanDTO].self,
-                                                 from: data) else {
-            throw .failed
-        }
-
-        return loanDTOs.map { loan(from: $0) }
     }
 
     func checkOut(bookID: String) async throws(CheckOutError) {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkout"))
         request.httpMethod = "POST"
 
-        guard let result = try? await networkService.data(for: request) else {
-            throw .failed
-        }
-
-        let (data, response) = result
-
-        guard (200..<300).contains(response.statusCode) else {
-            let errorDTO = try? decoder.decode(ErrorDTO.self,
-                                               from: data)
-
-            switch errorDTO?.error {
-            case .alreadyBorrowed:
-                throw .alreadyBorrowed
-            case .loanLimitReached:
-                throw .loanLimitReached
-            case .bookUnavailable:
-                throw .bookUnavailable
-            case .notBorrowed, nil:
+        do {
+            _ = try await networkService.send(request,
+                                              acceptableStatusCodes: 200..<300,
+                                              success: EmptyResponse.self,
+                                              failure: CheckOutErrorDTO.self)
+        } catch {
+            switch error {
+            case .failureResponse(let errorDTO):
+                switch errorDTO.error {
+                case .alreadyBorrowed:
+                    throw .alreadyBorrowed
+                case .loanLimitReached:
+                    throw .loanLimitReached
+                case .bookUnavailable:
+                    throw .bookUnavailable
+                }
+            case .requestFailed, .unacceptableStatusCode, .decodingFailed:
                 throw .failed
             }
         }
@@ -130,20 +117,19 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkin"))
         request.httpMethod = "POST"
 
-        guard let result = try? await networkService.data(for: request) else {
-            throw .failed
-        }
-
-        let (data, response) = result
-
-        guard (200..<300).contains(response.statusCode) else {
-            let errorDTO = try? decoder.decode(ErrorDTO.self,
-                                               from: data)
-
-            switch errorDTO?.error {
-            case .notBorrowed:
-                throw .notBorrowed
-            case .alreadyBorrowed, .loanLimitReached, .bookUnavailable, nil:
+        do {
+            _ = try await networkService.send(request,
+                                              acceptableStatusCodes: 200..<300,
+                                              success: EmptyResponse.self,
+                                              failure: CheckInErrorDTO.self)
+        } catch {
+            switch error {
+            case .failureResponse(let errorDTO):
+                switch errorDTO.error {
+                case .notBorrowed:
+                    throw .notBorrowed
+                }
+            case .requestFailed, .unacceptableStatusCode, .decodingFailed:
                 throw .failed
             }
         }

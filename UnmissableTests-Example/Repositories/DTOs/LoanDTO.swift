@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct LoanDTO: Codable {
+nonisolated struct LoanDTO: Codable {
     let book: BookDTO
     let borrowedAt: Date
     let dueDate: Date

@@ -25,13 +25,14 @@ struct ContentView: View {
 }
 
 #Preview {
-    let server = InMemoryServer(bundle: .main,
-                                loanLimit: 5,
-                                loanPeriodInDays: 21,
-                                calendar: .current,
-                                now: Date.init)
+    let session = MockServer.session(bundle: .main,
+                                         loanLimit: 5,
+                                         loanPeriodInDays: 21,
+                                         calendar: .current,
+                                         now: { Date() })
+    let networkService = DefaultNetworkService(session: session)
     let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
-                                                networkService: server)
+                                                networkService: networkService)
     let loanService = LoanService(repository: repository,
                                   now: Date.init)
 

@@ -13,13 +13,14 @@ struct UnmissableTests_ExampleApp: App {
     @State private var loansViewModel: LoansViewModel
 
     init() {
-        let server = InMemoryServer(bundle: .main,
-                                    loanLimit: 5,
-                                    loanPeriodInDays: 21,
-                                    calendar: .current,
-                                    now: Date.init)
+        let session = MockServer.session(bundle: .main,
+                                             loanLimit: 5,
+                                             loanPeriodInDays: 21,
+                                             calendar: .current,
+                                             now: { Date() })
+        let networkService = DefaultNetworkService(session: session)
         let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
-                                                    networkService: server)
+                                                    networkService: networkService)
         let catalogueService = CatalogueService(repository: repository)
         let loanService = LoanService(repository: repository,
                                       now: Date.init)
