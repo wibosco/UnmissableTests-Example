@@ -7,12 +7,14 @@
 
 import Foundation
 
-enum NetworkServiceError<Failure: Decodable & Sendable>: Error {
+nonisolated enum NetworkServiceError<Failure: Decodable & Sendable>: Error {
     case requestFailed
     case unacceptableStatusCode(Int)
     case failureResponse(Failure)
     case decodingFailed
 }
+
+nonisolated extension NetworkServiceError: Equatable where Failure: Equatable {}
 
 protocol NetworkService {
     func send<Success: Decodable & Sendable, Failure: Decodable & Sendable>(_ request: URLRequest,
@@ -21,13 +23,13 @@ protocol NetworkService {
 }
 
 final class DefaultNetworkService: NetworkService {
-    private let session: URLSession
+    private let session: HTTPSession
     private let decoder: JSONDecoder
     private let acceptableStatusCodes = 200..<300
 
     // MARK: - Init
 
-    init(session: URLSession) {
+    init(session: HTTPSession) {
         self.session = session
 
         let decoder = JSONDecoder()

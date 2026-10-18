@@ -168,6 +168,22 @@ struct LoanServiceTests {
         #expect(loans == expectedLoans)
     }
 
+    @Test("Given loans have been retrieved, when a book that's already on loan is borrowed, then the cached loans aren't duplicated")
+    func borrowBookAlreadyOnLoanDoesNotDuplicateCachedLoans() async throws {
+        let repository = StubLibraryRepository()
+        repository.retrieveLoansResponse = .success([.testData(book: .testData(id: "book-01"))])
+        repository.createLoanResponse = .success(.testData(book: .testData(id: "book-01")))
+
+        let sut = createSUT(repository: repository)
+
+        _ = try await sut.loans()
+        try await sut.borrowBook(.testData(id: "book-01"))
+
+        let loans = try await sut.loans()
+
+        #expect(loans == [.testData(book: .testData(id: "book-01"))])
+    }
+
     @Test("Given loans haven't been retrieved, when a book is borrowed, then the next loans retrieval returns the repository's loans")
     func borrowBookWithUnloadedCache() async throws {
         let repository = StubLibraryRepository()
@@ -215,18 +231,6 @@ struct LoanServiceTests {
         try await sut.returnBook(.testData(id: "book-01"))
 
         #expect(repository.events == [.deleteLoan(forBookID: "book-01")])
-    }
-
-    @Test("Given a book is returned, when that return is successful, then an error isn't thrown")
-    func successfulReturnBook() async throws {
-        let repository = StubLibraryRepository()
-        repository.deleteLoanResponse = .success(.testData())
-
-        let sut = createSUT(repository: repository)
-
-        await #expect(throws: Never.self) {
-            try await sut.returnBook(.testData(id: "book-01"))
-        }
     }
 
     @Test("Given a book is returned, when that return fails, then a failed error is thrown",
@@ -315,7 +319,7 @@ struct LoanServiceTests {
           )
     )
     func isOverdue(now: Date,
-                   expectedIsOverdue: Bool) {
+                   expectedIsOverdue: Bool) async throws {
         let sut = createSUT(now: { now })
 
         let isOverdue = sut.isOverdue(.testData(dueDate: Date(timeIntervalSince1970: 100)))

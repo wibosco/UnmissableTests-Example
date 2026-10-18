@@ -167,10 +167,10 @@ struct CatalogueViewModelTests {
             ] as [CatalogueViewModel.State]
           )
     )
-    func failedListingsLoad(listingsError: ListingsServiceError,
+    func failedListingsLoad(serviceError: ListingsServiceError,
                             expectedState: CatalogueViewModel.State) async throws {
         let listingService = StubListingService()
-        listingService.listingsResponse = .failure(listingsError)
+        listingService.listingsResponse = .failure(serviceError)
 
         let sut = createSUT(listingService: listingService)
 
@@ -191,12 +191,12 @@ struct CatalogueViewModelTests {
             ] as [CatalogueViewModel.State]
           )
     )
-    func failedLoansLoad(loansError: LoansServiceError,
+    func failedLoansLoad(serviceError: LoansServiceError,
                          expectedState: CatalogueViewModel.State) async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData()])
         let loanService = StubLoanService()
-        loanService.loansResponse = .failure(loansError)
+        loanService.loansResponse = .failure(serviceError)
 
         let sut = createSUT(listingService: listingService,
                             loanService: loanService)
@@ -264,13 +264,13 @@ struct CatalogueViewModelTests {
             ] as [CatalogueViewModel.Alert]
           )
     )
-    func failedBorrowBook(borrowError: BorrowBookServiceError,
+    func failedBorrowBook(serviceError: BorrowBookServiceError,
                           expectedAlert: CatalogueViewModel.Alert) async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData(book: .testData(id: "book-01"))])
         let loanService = StubLoanService()
         loanService.loansResponse = .success([])
-        loanService.borrowBookResponse = .failure(borrowError)
+        loanService.borrowBookResponse = .failure(serviceError)
 
         let sut = createSUT(listingService: listingService,
                             loanService: loanService)
@@ -528,7 +528,7 @@ struct CatalogueViewModelTests {
           ] as [(CatalogueViewModel.Row.Availability, CatalogueViewModel.Row.Action?)]
     )
     func rowAction(availability: CatalogueViewModel.Row.Availability,
-                   expectedAction: CatalogueViewModel.Row.Action?) {
+                   expectedAction: CatalogueViewModel.Row.Action?) async throws {
         let sut = CatalogueViewModel.Row.testData(availability: availability)
 
         #expect(sut.action == expectedAction)

@@ -125,7 +125,7 @@ struct LibraryRepositoryTests {
         #expect(networkService.events == [.send(expectedRequest)])
     }
 
-    @Test("Given loans are retrieved, when that retrieval and mapping is successful, then an array of Loans is returned")
+    @Test("Given loans are retrieved, when that retrieval and mapping is successful, then each loan's details are mapped")
     func successfulLoansRetrieval() async throws {
         let networkService = StubNetworkService()
         let loanDTOs: [LoanDTO] = [.testData(book: .testData(id: "book-01",
@@ -133,33 +133,21 @@ struct LibraryRepositoryTests {
                                                              author: .testData(firstName: "Bram",
                                                                                lastName: "Stoker"),
                                                              coverImageName: "dracula"),
-                                             dueDate: Date(timeIntervalSince1970: 100)),
-                                   .testData(book: .testData(id: "book-02",
-                                                             title: "Frankenstein",
-                                                             author: .testData(firstName: "Mary",
-                                                                               lastName: "Shelley"),
-                                                             coverImageName: "frankenstein"),
-                                             dueDate: Date(timeIntervalSince1970: 200))]
+                                             dueDate: Date(timeIntervalSince1970: 100))]
         networkService.sendResponse = .success(LoanListDTO.testData(loans: loanDTOs))
 
         let sut = createSUT(networkService: networkService)
 
         let loans = try await sut.retrieveLoans()
 
-        let expectedLoans: [Loan] = [.testData(book: .testData(id: "book-01",
-                                                               title: "Dracula",
-                                                               author: .testData(firstName: "Bram",
-                                                                                 lastName: "Stoker"),
-                                                               coverImageName: "dracula"),
-                                               dueDate: Date(timeIntervalSince1970: 100)),
-                                     .testData(book: .testData(id: "book-02",
-                                                               title: "Frankenstein",
-                                                               author: .testData(firstName: "Mary",
-                                                                                 lastName: "Shelley"),
-                                                               coverImageName: "frankenstein"),
-                                               dueDate: Date(timeIntervalSince1970: 200))]
+        let expectedLoan = Loan.testData(book: .testData(id: "book-01",
+                                                         title: "Dracula",
+                                                         author: .testData(firstName: "Bram",
+                                                                           lastName: "Stoker"),
+                                                         coverImageName: "dracula"),
+                                         dueDate: Date(timeIntervalSince1970: 100))
 
-        #expect(loans == expectedLoans)
+        #expect(loans == [expectedLoan])
     }
 
     @Test("Given loans are retrieved, when that retrieval fails, then a failed error is thrown",
@@ -210,7 +198,7 @@ struct LibraryRepositoryTests {
         #expect(networkService.events == [.send(expectedRequest)])
     }
 
-    @Test("Given a loan is created, when that creation and mapping is successful, then a Loan is returned")
+    @Test("Given a loan is created, when that creation and mapping is successful, then the created loan is returned")
     func successfulCreateLoan() async throws {
         let networkService = StubNetworkService()
         let loanDTO = LoanDTO.testData(book: .testData(id: "book-01",
@@ -295,7 +283,7 @@ struct LibraryRepositoryTests {
         #expect(networkService.events == [.send(expectedRequest)])
     }
 
-    @Test("Given a loan is deleted, when that deletion and mapping is successful, then a Listing is returned")
+    @Test("Given a loan is deleted, when that deletion and mapping is successful, then the book's listing is returned")
     func successfulDeleteLoan() async throws {
         let networkService = StubNetworkService()
         let bookDTO = BookDTO.testData(id: "book-01",

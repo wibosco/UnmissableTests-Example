@@ -113,10 +113,10 @@ struct LoansViewModelTests {
             ] as [LoansViewModel.State]
           )
     )
-    func failedLoad(loansError: LoansServiceError,
+    func failedLoad(serviceError: LoansServiceError,
                     expectedState: LoansViewModel.State) async throws {
         let loanService = StubLoanService()
-        loanService.loansResponse = .failure(loansError)
+        loanService.loansResponse = .failure(serviceError)
 
         let sut = createSUT(loanService: loanService)
 

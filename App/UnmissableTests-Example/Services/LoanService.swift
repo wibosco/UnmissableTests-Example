@@ -86,7 +86,10 @@ final class DefaultLoanService: LoanService {
             }
         }
 
-        // An unloaded cache has nothing to keep in sync - the next `loans()` call will fetch fresh data.
+        // An unloaded cache has nothing to keep in sync - the next `loans()` call will fetch fresh data. Borrowing
+        // a book that's already on loan returns the existing loan, so it replaces that book's cached loan rather
+        // than adding a second.
+        cachedLoans?.removeAll { $0.book.id == book.id }
         cachedLoans?.append(loan)
 
         return loan
