@@ -7,21 +7,15 @@
 
 import Foundation
 
-enum Availability: Equatable, Sendable {
-    case available
-    case onLoan
-    case onLoanToYou
-}
-
 protocol CatalogueRepository {
-    func catalogue() async throws(CatalogueError) -> [Listing]
-    func loans() async throws(LoansError) -> [Loan]
+    func retrieveListings() async throws(ListingsError) -> [Listing]
+    func retrieveLoans() async throws(LoansError) -> [Loan]
 
-    func checkOut(bookID: String) async throws(CheckOutError) -> Listing
-    func checkIn(bookID: String) async throws(CheckInError) -> Listing
+    func checkOut(book bookID: String) async throws(CheckOutError) -> Loan
+    func checkIn(book bookID: String) async throws(CheckInError) -> Listing
 }
 
-enum CatalogueError: Error, Equatable {
+enum ListingsError: Error, Equatable {
     case failed
 }
 
@@ -55,7 +49,7 @@ final class DefaultCatalogueRepository: CatalogueRepository {
 
     // MARK: - Catalogue
 
-    func catalogue() async throws(CatalogueError) -> [Listing] {
+    func retrieveListings() async throws(ListingsError) -> [Listing] {
         let request = URLRequest(url: baseURL.appending(path: "books"))
 
         do {
@@ -72,7 +66,7 @@ final class DefaultCatalogueRepository: CatalogueRepository {
 
     // MARK: - Loans
 
-    func loans() async throws(LoansError) -> [Loan] {
+    func retrieveLoans() async throws(LoansError) -> [Loan] {
         let request = URLRequest(url: baseURL.appending(path: "loans"))
 
         do {
@@ -87,17 +81,17 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         }
     }
 
-    func checkOut(bookID: String) async throws(CheckOutError) -> Listing {
+    func checkOut(book bookID: String) async throws(CheckOutError) -> Loan {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkout"))
         request.httpMethod = "POST"
 
         do {
-            let bookDTO = try await networkService.send(request,
+            let loanDTO = try await networkService.send(request,
                                                         acceptableStatusCodes: 200..<300,
-                                                        success: BookDTO.self,
+                                                        success: LoanDTO.self,
                                                         failure: CheckOutErrorDTO.self)
 
-            return listing(from: bookDTO)
+            return loan(from: loanDTO)
         } catch {
             switch error {
             case .failureResponse(let errorDTO):
@@ -115,7 +109,7 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         }
     }
 
-    func checkIn(bookID: String) async throws(CheckInError) -> Listing {
+    func checkIn(book bookID: String) async throws(CheckInError) -> Listing {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkin"))
         request.httpMethod = "POST"
 

@@ -14,7 +14,10 @@ enum LoanError: Error, Equatable {
 final class LoanService {
     private let repository: CatalogueRepository
     private let now: () -> Date
-
+    private var cachedLoans: [Loan]?
+    
+    // MARK: - Init
+    
     init(repository: CatalogueRepository,
          now: @escaping () -> Date) {
         self.repository = repository
@@ -24,25 +27,40 @@ final class LoanService {
     // MARK: - Loans
 
     func loans() async throws -> [Loan] {
-        try await repository.loans()
+        if let cachedLoans {
+            return cachedLoans
+        }
+
+        let loans = try await repository.retrieveLoans()
+        cachedLoans = loans
+
+        return loans
     }
 
     // MARK: - Borrowing
 
     @discardableResult
-    func borrow(_ book: Book) async throws -> Listing {
+    func borrow(_ book: Book) async throws -> Loan {
+        let loan: Loan
+
         do {
-            return try await repository.checkOut(bookID: book.id)
+            loan = try await repository.checkOut(book: book.id)
         } catch CheckOutError.loanLimitReached {
             throw LoanError.loanLimitReached
         }
+
+        // An unloaded cache has nothing to keep in sync, the next `loans()` call will fetch fresh data.
+        cachedLoans?.append(loan)
+
+        return loan
     }
 
     // MARK: - Returning
 
-    @discardableResult
-    func returnBook(_ book: Book) async throws -> Listing {
-        try await repository.checkIn(bookID: book.id)
+    func returnBook(_ book: Book) async throws {
+        _ = try await repository.checkIn(book: book.id)
+
+        cachedLoans?.removeAll { $0.book.id == book.id }
     }
 
     // MARK: - Overdue

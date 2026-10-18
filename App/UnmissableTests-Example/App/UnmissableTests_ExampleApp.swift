@@ -10,7 +10,7 @@ import SwiftUI
 
 @main
 struct UnmissableTests_ExampleApp: App {
-    @State private var catalogueViewModel: CatalogueViewModel
+    @State private var listingsViewModel: ListingsViewModel
     @State private var loansViewModel: LoansViewModel
 
     init() {
@@ -18,18 +18,18 @@ struct UnmissableTests_ExampleApp: App {
         let networkService = DefaultNetworkService(session: session)
         let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
                                                     networkService: networkService)
-        let catalogueService = CatalogueService(repository: repository)
+        let listingService = ListingService(repository: repository)
         let loanService = LoanService(repository: repository,
                                       now: Date.init)
 
-        _catalogueViewModel = State(initialValue: CatalogueViewModel(catalogueService: catalogueService,
+        _listingsViewModel = State(initialValue: ListingsViewModel(listingService: listingService,
                                                                      loanService: loanService))
         _loansViewModel = State(initialValue: LoansViewModel(loanService: loanService))
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView(catalogueViewModel: catalogueViewModel,
+            ContentView(listingsViewModel: listingsViewModel,
                         loansViewModel: loansViewModel)
         }
     }

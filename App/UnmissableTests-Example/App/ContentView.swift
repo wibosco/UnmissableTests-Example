@@ -9,13 +9,13 @@ import MockServer
 import SwiftUI
 
 struct ContentView: View {
-    let catalogueViewModel: CatalogueViewModel
+    let listingsViewModel: ListingsViewModel
     let loansViewModel: LoansViewModel
 
     var body: some View {
         TabView {
-            Tab("Catalogue", systemImage: "books.vertical") {
-                CatalogueView(viewModel: catalogueViewModel)
+            Tab("Listings", systemImage: "books.vertical") {
+                ListingsView(viewModel: listingsViewModel)
             }
 
             Tab("Loans", systemImage: "book") {
@@ -33,7 +33,7 @@ struct ContentView: View {
     let loanService = LoanService(repository: repository,
                                   now: Date.init)
 
-    ContentView(catalogueViewModel: CatalogueViewModel(catalogueService: CatalogueService(repository: repository),
+    ContentView(listingsViewModel: ListingsViewModel(listingService: ListingService(repository: repository),
                                                        loanService: loanService),
                 loansViewModel: LoansViewModel(loanService: loanService))
 }

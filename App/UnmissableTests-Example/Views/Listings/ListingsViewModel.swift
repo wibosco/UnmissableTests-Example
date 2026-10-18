@@ -1,5 +1,5 @@
 //
-//  CatalogueViewModel.swift
+//  ListingsViewModel.swift
 //  UnmissableTests-Example
 //
 //  Created by William Boles on 17/10/2026.
@@ -9,7 +9,7 @@ import Foundation
 import Observation
 
 @Observable
-final class CatalogueViewModel {
+final class ListingsViewModel {
     struct Row: Identifiable, Equatable {
         enum Availability: Equatable {
             case available
@@ -45,9 +45,10 @@ final class CatalogueViewModel {
     private(set) var state = State.loading
     private(set) var alert: Alert?
 
-    private let catalogueService: CatalogueService
+    private let listingService: ListingService
     private let loanService: LoanService
-    @ObservationIgnored private var books = [String: Book]()
+    
+    @ObservationIgnored private var listings = [Listing]()
 
     var isShowingAlert: Bool {
         get {
@@ -62,9 +63,9 @@ final class CatalogueViewModel {
     
     // MARK: - Init
 
-    init(catalogueService: CatalogueService,
+    init(listingService: ListingService,
          loanService: LoanService) {
-        self.catalogueService = catalogueService
+        self.listingService = listingService
         self.loanService = loanService
     }
 
@@ -72,35 +73,50 @@ final class CatalogueViewModel {
 
     func load() async {
         do {
-            let listings = try await catalogueService.catalogue()
+            listings = try await listingService.listings()
+        } catch {
+            state = .failed
+            return
+        }
 
-            books = Dictionary(uniqueKeysWithValues: listings.map { ($0.book.id, $0.book) })
+        await updateState()
+    }
+
+    private func updateState() async {
+        do {
+            let loanedBookIDs = Set(try await loanService.loans().map(\.book.id))
+
             state = .loaded(listings
                 .sorted(using: [
                     SortDescriptor(\Listing.book.author.lastName),
                     SortDescriptor(\Listing.book.author.firstName),
                     SortDescriptor(\Listing.book.title)
                 ])
-                .map { row(for: $0) })
+                .map { row(for: $0,
+                           loanedBookIDs: loanedBookIDs) })
         } catch {
             state = .failed
         }
     }
 
-    private func row(for listing: Listing) -> Row {
+    private func row(for listing: Listing,
+                     loanedBookIDs: Set<String>) -> Row {
         let availability: Row.Availability
         let action: Row.Action?
 
-        switch listing.availability {
-        case .available:
-            availability = .available
-            action = .borrow
-        case .onLoan:
-            availability = .onLoan
-            action = nil
-        case .onLoanToYou:
+        // The loan cache, rather than the catalogue, is the source of truth for the user's own loans.
+        if loanedBookIDs.contains(listing.book.id) {
             availability = .onLoanToYou
             action = .return
+        } else {
+            switch listing.availability {
+            case .available, .onLoanToYou:
+                availability = .available
+                action = .borrow
+            case .onLoan:
+                availability = .onLoan
+                action = nil
+            }
         }
 
         return Row(id: listing.book.id,
@@ -114,13 +130,13 @@ final class CatalogueViewModel {
     // MARK: - Lending
 
     func borrow(_ row: Row) async {
-        guard let book = books[row.id] else {
+        guard let book = listings.first(where: { $0.book.id == row.id })?.book else {
             return
         }
 
         do {
             try await loanService.borrow(book)
-            await load()
+            await updateState()
         } catch LoanError.loanLimitReached {
             alert = .loanLimitReached
         } catch {
@@ -129,13 +145,13 @@ final class CatalogueViewModel {
     }
 
     func returnBook(_ row: Row) async {
-        guard let book = books[row.id] else {
+        guard let book = listings.first(where: { $0.book.id == row.id })?.book else {
             return
         }
 
         do {
             try await loanService.returnBook(book)
-            await load()
+            await updateState()
         } catch {
             alert = .returnFailed
         }

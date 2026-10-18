@@ -1,5 +1,5 @@
 //
-//  CatalogueView.swift
+//  ListingsView.swift
 //  UnmissableTests-Example
 //
 //  Created by William Boles on 17/10/2026.
@@ -8,8 +8,8 @@
 import MockServer
 import SwiftUI
 
-struct CatalogueView: View {
-    @Bindable var viewModel: CatalogueViewModel
+struct ListingsView: View {
+    @Bindable var viewModel: ListingsViewModel
     
     // MARK: - Views
     
@@ -66,7 +66,7 @@ struct CatalogueView: View {
         }
     }
 
-    private var rows: [CatalogueViewModel.Row] {
+    private var rows: [ListingsViewModel.Row] {
         guard case .loaded(let rows) = viewModel.state else {
             return []
         }
@@ -76,7 +76,7 @@ struct CatalogueView: View {
 
     // MARK: - Alert
 
-    private func title(for alert: CatalogueViewModel.Alert) -> String {
+    private func title(for alert: ListingsViewModel.Alert) -> String {
         switch alert {
         case .loanLimitReached:
             "Loan Limit Reached"
@@ -87,7 +87,7 @@ struct CatalogueView: View {
         }
     }
 
-    private func message(for alert: CatalogueViewModel.Alert) -> String {
+    private func message(for alert: ListingsViewModel.Alert) -> String {
         switch alert {
         case .loanLimitReached:
             "Return a book before borrowing another."
@@ -98,7 +98,7 @@ struct CatalogueView: View {
 }
 
 private struct CatalogueRow: View {
-    let row: CatalogueViewModel.Row
+    let row: ListingsViewModel.Row
     
     // MARK: - Views
     
@@ -144,7 +144,7 @@ private struct CatalogueRow: View {
     let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
                                                 networkService: networkService)
 
-    CatalogueView(viewModel: CatalogueViewModel(catalogueService: CatalogueService(repository: repository),
+    ListingsView(viewModel: ListingsViewModel(listingService: ListingService(repository: repository),
                                                 loanService: LoanService(repository: repository,
                                                                          now: Date.init)))
 }

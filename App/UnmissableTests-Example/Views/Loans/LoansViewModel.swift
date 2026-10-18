@@ -33,6 +33,7 @@ final class LoansViewModel {
     private(set) var alert: Alert?
 
     private let loanService: LoanService
+    
     @ObservationIgnored private var books = [String: Book]()
 
     private static let sortOrder: [SortDescriptor<Loan>] = [
