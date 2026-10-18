@@ -17,8 +17,8 @@ protocol CatalogueRepository {
     func catalogue() async throws(CatalogueError) -> [Listing]
     func loans() async throws(LoansError) -> [Loan]
 
-    func checkOut(bookID: String) async throws(CheckOutError)
-    func checkIn(bookID: String) async throws(CheckInError)
+    func checkOut(bookID: String) async throws(CheckOutError) -> Listing
+    func checkIn(bookID: String) async throws(CheckInError) -> Listing
 }
 
 enum CatalogueError: Error, Equatable {
@@ -87,15 +87,17 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         }
     }
 
-    func checkOut(bookID: String) async throws(CheckOutError) {
+    func checkOut(bookID: String) async throws(CheckOutError) -> Listing {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkout"))
         request.httpMethod = "POST"
 
         do {
-            _ = try await networkService.send(request,
-                                              acceptableStatusCodes: 200..<300,
-                                              success: EmptyResponse.self,
-                                              failure: CheckOutErrorDTO.self)
+            let bookDTO = try await networkService.send(request,
+                                                        acceptableStatusCodes: 200..<300,
+                                                        success: BookDTO.self,
+                                                        failure: CheckOutErrorDTO.self)
+
+            return listing(from: bookDTO)
         } catch {
             switch error {
             case .failureResponse(let errorDTO):
@@ -113,15 +115,17 @@ final class DefaultCatalogueRepository: CatalogueRepository {
         }
     }
 
-    func checkIn(bookID: String) async throws(CheckInError) {
+    func checkIn(bookID: String) async throws(CheckInError) -> Listing {
         var request = URLRequest(url: baseURL.appending(path: "books/\(bookID)/checkin"))
         request.httpMethod = "POST"
 
         do {
-            _ = try await networkService.send(request,
-                                              acceptableStatusCodes: 200..<300,
-                                              success: EmptyResponse.self,
-                                              failure: CheckInErrorDTO.self)
+            let bookDTO = try await networkService.send(request,
+                                                        acceptableStatusCodes: 200..<300,
+                                                        success: BookDTO.self,
+                                                        failure: CheckInErrorDTO.self)
+
+            return listing(from: bookDTO)
         } catch {
             switch error {
             case .failureResponse(let errorDTO):

@@ -5,6 +5,7 @@
 //  Created by William Boles on 14/10/2026.
 //
 
+import MockServer
 import SwiftUI
 
 @main
@@ -13,11 +14,7 @@ struct UnmissableTests_ExampleApp: App {
     @State private var loansViewModel: LoansViewModel
 
     init() {
-        let session = MockServer.session(bundle: .main,
-                                             loanLimit: 5,
-                                             loanPeriodInDays: 21,
-                                             calendar: .current,
-                                             now: { Date() })
+        let session = DefaultMockServer.session()
         let networkService = DefaultNetworkService(session: session)
         let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
                                                     networkService: networkService)

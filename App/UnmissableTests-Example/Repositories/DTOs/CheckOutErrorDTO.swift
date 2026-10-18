@@ -7,8 +7,8 @@
 
 import Foundation
 
-nonisolated struct CheckOutErrorDTO: Codable {
-    enum Code: String, Codable {
+nonisolated struct CheckOutErrorDTO: Decodable {
+    enum Code: String, Decodable {
         case alreadyBorrowed = "already_borrowed"
         case loanLimitReached = "loan_limit_reached"
         case bookUnavailable = "book_unavailable"

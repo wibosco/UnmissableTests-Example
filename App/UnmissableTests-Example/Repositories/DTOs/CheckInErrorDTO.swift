@@ -7,8 +7,8 @@
 
 import Foundation
 
-nonisolated struct CheckInErrorDTO: Codable {
-    enum Code: String, Codable {
+nonisolated struct CheckInErrorDTO: Decodable {
+    enum Code: String, Decodable {
         case notBorrowed = "not_borrowed"
     }
 

@@ -63,12 +63,6 @@ final class DefaultNetworkService: NetworkService {
             throw .unacceptableStatusCode(httpResponse.statusCode)
         }
         
-        // A body-less response, such as a 204, isn't valid JSON so can't be decoded.
-        if data.isEmpty,
-           let emptyResponse = EmptyResponse() as? Success {
-            return emptyResponse
-        }
-        
         guard let successResponse = try? decoder.decode(success,
                                                         from: data) else {
             throw .decodingFailed

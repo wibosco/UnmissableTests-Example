@@ -1,0 +1,11 @@
+{
+  "id": "book-01",
+  "title": "Dracula",
+  "author": {
+    "first_name": "Bram",
+    "last_name": "Stoker"
+  },
+  "isbn": "9780141439846",
+  "cover_image_name": "cover-dracula",
+  "availability": "on_loan_to_you"
+}

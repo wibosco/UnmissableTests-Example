@@ -29,9 +29,10 @@ final class LoanService {
 
     // MARK: - Borrowing
 
-    func borrow(_ book: Book) async throws {
+    @discardableResult
+    func borrow(_ book: Book) async throws -> Listing {
         do {
-            try await repository.checkOut(bookID: book.id)
+            return try await repository.checkOut(bookID: book.id)
         } catch CheckOutError.loanLimitReached {
             throw LoanError.loanLimitReached
         }
@@ -39,7 +40,8 @@ final class LoanService {
 
     // MARK: - Returning
 
-    func returnBook(_ book: Book) async throws {
+    @discardableResult
+    func returnBook(_ book: Book) async throws -> Listing {
         try await repository.checkIn(bookID: book.id)
     }
 

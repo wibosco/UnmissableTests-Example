@@ -7,14 +7,14 @@
 
 import Foundation
 
-nonisolated struct BookDTO: Codable {
-    enum Status: String, Codable {
+nonisolated struct BookDTO: Decodable {
+    enum Status: String, Decodable {
         case available
         case onLoan = "on_loan"
         case onLoanToYou = "on_loan_to_you"
     }
 
-    struct AuthorResponse: Codable {
+    struct AuthorResponse: Decodable {
         let firstName: String
         let lastName: String
     }

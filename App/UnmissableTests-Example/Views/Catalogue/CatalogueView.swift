@@ -5,6 +5,7 @@
 //  Created by William Boles on 17/10/2026.
 //
 
+import MockServer
 import SwiftUI
 
 struct CatalogueView: View {
@@ -138,11 +139,7 @@ private struct CatalogueRow: View {
 }
 
 #Preview {
-    let session = MockServer.session(bundle: .main,
-                                         loanLimit: 5,
-                                         loanPeriodInDays: 21,
-                                         calendar: .current,
-                                         now: { Date() })
+    let session = DefaultMockServer.session()
     let networkService = DefaultNetworkService(session: session)
     let repository = DefaultCatalogueRepository(baseURL: URL(string: "https://library.example.com")!,
                                                 networkService: networkService)
