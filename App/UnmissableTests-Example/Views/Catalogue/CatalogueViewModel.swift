@@ -44,6 +44,8 @@ final class CatalogueViewModel {
         case loading
         case loaded([Row])
         case failed
+        case catalogueUnavailable
+        case membershipExpired
 
         var rows: [Row] {
             guard case .loaded(let rows) = self else {
@@ -93,7 +95,13 @@ final class CatalogueViewModel {
         do {
             listings = try await listingService.listings()
         } catch {
-            state = .failed
+            switch error {
+            case .catalogueUnavailable:
+                state = .catalogueUnavailable
+            case .failed:
+                state = .failed
+            }
+
             return
         }
 
@@ -101,20 +109,31 @@ final class CatalogueViewModel {
     }
 
     private func refreshLoans() async {
-        do {
-            let loanedBookIDs = Set(try await loanService.loans().map(\.book.id))
+        let loans: [Loan]
 
-            state = .loaded(listings
-                .sorted(using: [
-                    SortDescriptor(\Listing.book.author.lastName),
-                    SortDescriptor(\Listing.book.author.firstName),
-                    SortDescriptor(\Listing.book.title)
-                ])
-                .map { row(for: $0,
-                           loanedBookIDs: loanedBookIDs) })
+        do {
+            loans = try await loanService.loans()
         } catch {
-            state = .failed
+            switch error {
+            case .membershipExpired:
+                state = .membershipExpired
+            case .failed:
+                state = .failed
+            }
+
+            return
         }
+
+        let loanedBookIDs = Set(loans.map(\.book.id))
+
+        state = .loaded(listings
+            .sorted(using: [
+                SortDescriptor(\Listing.book.author.lastName),
+                SortDescriptor(\Listing.book.author.firstName),
+                SortDescriptor(\Listing.book.title)
+            ])
+            .map { row(for: $0,
+                       loanedBookIDs: loanedBookIDs) })
     }
 
     private func row(for listing: Listing,

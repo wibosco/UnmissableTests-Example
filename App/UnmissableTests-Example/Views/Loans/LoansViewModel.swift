@@ -23,6 +23,7 @@ final class LoansViewModel {
         case loading
         case loaded([Row])
         case failed
+        case membershipExpired
 
         var rows: [Row] {
             guard case .loaded(let rows) = self else {
@@ -67,7 +68,13 @@ final class LoansViewModel {
         do {
             loans = try await loanService.loans()
         } catch {
-            state = .failed
+            switch error {
+            case .membershipExpired:
+                state = .membershipExpired
+            case .failed:
+                state = .failed
+            }
+
             return
         }
 

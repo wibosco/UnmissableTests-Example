@@ -27,6 +27,14 @@ struct CatalogueView: View {
                 case .failed:
                     ContentUnavailableView("Unable to Load Books",
                                            systemImage: "exclamationmark.triangle")
+                case .catalogueUnavailable:
+                    ContentUnavailableView("Catalogue Unavailable",
+                                           systemImage: "wrench.and.screwdriver",
+                                           description: Text("The catalogue is being updated. Try again shortly."))
+                case .membershipExpired:
+                    ContentUnavailableView("Membership Expired",
+                                           systemImage: "person.crop.circle.badge.exclamationmark",
+                                           description: Text("Renew your library membership to borrow books."))
                 case .loaded(let rows) where rows.isEmpty:
                     ContentUnavailableView("No Books",
                                            systemImage: "books.vertical")

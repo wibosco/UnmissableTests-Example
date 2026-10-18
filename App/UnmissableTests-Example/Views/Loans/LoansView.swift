@@ -27,6 +27,10 @@ struct LoansView: View {
                 case .failed:
                     ContentUnavailableView("Unable to Load Loans",
                                            systemImage: "exclamationmark.triangle")
+                case .membershipExpired:
+                    ContentUnavailableView("Membership Expired",
+                                           systemImage: "person.crop.circle.badge.exclamationmark",
+                                           description: Text("Renew your library membership to see your loans."))
                 case .loaded(let rows) where rows.isEmpty:
                     ContentUnavailableView("No Loans",
                                            systemImage: "book")

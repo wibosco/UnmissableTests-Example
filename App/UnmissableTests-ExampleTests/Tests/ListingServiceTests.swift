@@ -44,14 +44,26 @@ struct ListingServiceTests {
         #expect(listings == repositoryListings)
     }
 
-    @Test("Given listings are retrieved, when that retrieval fails, then a failed error is thrown")
-    func failedListingsRetrieval() async throws {
+    @Test("Given listings are retrieved, when that retrieval fails, then the matching error is thrown",
+          arguments: zip(
+            [
+              .catalogueUnavailable,
+              .failed
+            ] as [RetrieveListingsRepositoryError],
+            [
+              .catalogueUnavailable,
+              .failed
+            ] as [ListingsServiceError]
+          )
+    )
+    func failedListingsRetrieval(repositoryError: RetrieveListingsRepositoryError,
+                                 expectedError: ListingsServiceError) async throws {
         let repository = StubLibraryRepository()
-        repository.retrieveListingsResponse = .failure(.failed)
+        repository.retrieveListingsResponse = .failure(repositoryError)
 
         let sut = createSUT(repository: repository)
 
-        await #expect(throws: ListingsServiceError.failed) {
+        await #expect(throws: expectedError) {
             try await sut.listings()
         }
     }

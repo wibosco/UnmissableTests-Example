@@ -101,16 +101,28 @@ struct LoansViewModelTests {
         #expect(sut.state.rows.map(\.id) == ["book-05", "book-04", "book-03", "book-02", "book-01"])
     }
 
-    @Test("Given loans are loaded, when that load fails, then the state is failed")
-    func failedLoad() async throws {
+    @Test("Given loans are loaded, when that load fails, then the matching failed state is set",
+          arguments: zip(
+            [
+              .membershipExpired,
+              .failed
+            ] as [LoansServiceError],
+            [
+              .membershipExpired,
+              .failed
+            ] as [LoansViewModel.State]
+          )
+    )
+    func failedLoad(loansError: LoansServiceError,
+                    expectedState: LoansViewModel.State) async throws {
         let loanService = StubLoanService()
-        loanService.loansResponse = .failure(.failed)
+        loanService.loansResponse = .failure(loansError)
 
         let sut = createSUT(loanService: loanService)
 
         await sut.load()
 
-        #expect(sut.state == .failed)
+        #expect(sut.state == expectedState)
     }
 
     // MARK: - ReturnBook

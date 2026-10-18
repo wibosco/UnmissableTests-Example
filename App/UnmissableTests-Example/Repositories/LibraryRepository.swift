@@ -16,10 +16,12 @@ protocol LibraryRepository {
 }
 
 enum RetrieveListingsRepositoryError: Error, Equatable {
+    case catalogueUnavailable
     case failed
 }
 
 enum RetrieveLoansRepositoryError: Error, Equatable {
+    case membershipExpired
     case failed
 }
 
@@ -54,11 +56,19 @@ final class DefaultLibraryRepository: LibraryRepository {
         do {
             let bookListDTO = try await networkService.send(request,
                                                             success: BookListDTO.self,
-                                                            failure: Never.self)
+                                                            failure: RetrieveListingsErrorDTO.self)
 
             return bookListDTO.books.map { listing(from: $0) }
         } catch {
-            throw .failed
+            switch error {
+            case .failureResponse(let errorDTO):
+                switch errorDTO.error {
+                case .catalogueUnavailable:
+                    throw .catalogueUnavailable
+                }
+            case .requestFailed, .unacceptableStatusCode, .decodingFailed:
+                throw .failed
+            }
         }
     }
 
@@ -70,11 +80,19 @@ final class DefaultLibraryRepository: LibraryRepository {
         do {
             let loanListDTO = try await networkService.send(request,
                                                             success: LoanListDTO.self,
-                                                            failure: Never.self)
+                                                            failure: RetrieveLoansErrorDTO.self)
 
             return loanListDTO.loans.map { loan(from: $0) }
         } catch {
-            throw .failed
+            switch error {
+            case .failureResponse(let errorDTO):
+                switch errorDTO.error {
+                case .membershipExpired:
+                    throw .membershipExpired
+                }
+            case .requestFailed, .unacceptableStatusCode, .decodingFailed:
+                throw .failed
+            }
         }
     }
 

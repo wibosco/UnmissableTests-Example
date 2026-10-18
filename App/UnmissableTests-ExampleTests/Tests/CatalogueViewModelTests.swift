@@ -155,31 +155,55 @@ struct CatalogueViewModelTests {
         #expect(row.availability == .onLoanToYou)
     }
 
-    @Test("Given listings are loaded, when the listings retrieval fails, then the state is failed")
-    func failedListingsLoad() async throws {
+    @Test("Given listings are loaded, when the listings retrieval fails, then the matching failed state is set",
+          arguments: zip(
+            [
+              .catalogueUnavailable,
+              .failed
+            ] as [ListingsServiceError],
+            [
+              .catalogueUnavailable,
+              .failed
+            ] as [CatalogueViewModel.State]
+          )
+    )
+    func failedListingsLoad(listingsError: ListingsServiceError,
+                            expectedState: CatalogueViewModel.State) async throws {
         let listingService = StubListingService()
-        listingService.listingsResponse = .failure(.failed)
+        listingService.listingsResponse = .failure(listingsError)
 
         let sut = createSUT(listingService: listingService)
 
         await sut.load()
 
-        #expect(sut.state == .failed)
+        #expect(sut.state == expectedState)
     }
 
-    @Test("Given listings are loaded, when the loans retrieval fails, then the state is failed")
-    func failedLoansLoad() async throws {
+    @Test("Given listings are loaded, when the loans retrieval fails, then the matching failed state is set",
+          arguments: zip(
+            [
+              .membershipExpired,
+              .failed
+            ] as [LoansServiceError],
+            [
+              .membershipExpired,
+              .failed
+            ] as [CatalogueViewModel.State]
+          )
+    )
+    func failedLoansLoad(loansError: LoansServiceError,
+                         expectedState: CatalogueViewModel.State) async throws {
         let listingService = StubListingService()
         listingService.listingsResponse = .success([.testData()])
         let loanService = StubLoanService()
-        loanService.loansResponse = .failure(.failed)
+        loanService.loansResponse = .failure(loansError)
 
         let sut = createSUT(listingService: listingService,
                             loanService: loanService)
 
         await sut.load()
 
-        #expect(sut.state == .failed)
+        #expect(sut.state == expectedState)
     }
 
     // MARK: - BorrowBook

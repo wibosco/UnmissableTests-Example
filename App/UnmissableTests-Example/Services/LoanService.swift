@@ -18,6 +18,7 @@ protocol LoanService {
 }
 
 enum LoansServiceError: Error, Equatable {
+    case membershipExpired
     case failed
 }
 
@@ -56,6 +57,8 @@ final class DefaultLoanService: LoanService {
             loans = try await repository.retrieveLoans()
         } catch {
             switch error {
+            case .membershipExpired:
+                throw .membershipExpired
             case .failed:
                 throw .failed
             }

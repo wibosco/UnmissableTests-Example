@@ -83,15 +83,27 @@ struct LibraryRepositoryTests {
             .requestFailed,
             .unacceptableStatusCode(500),
             .decodingFailed
-          ] as [NetworkServiceError<Never>]
+          ] as [NetworkServiceError<RetrieveListingsErrorDTO>]
     )
-    func failedListingsRetrieval(networkError: NetworkServiceError<Never>) async throws {
+    func failedListingsRetrieval(networkError: NetworkServiceError<RetrieveListingsErrorDTO>) async throws {
         let networkService = StubNetworkService()
         networkService.sendResponse = .failure(networkError)
 
         let sut = createSUT(networkService: networkService)
 
         await #expect(throws: RetrieveListingsRepositoryError.failed) {
+            try await sut.retrieveListings()
+        }
+    }
+
+    @Test("Given listings are retrieved, when the server responds with a catalogue unavailable failure, then a catalogue unavailable error is thrown")
+    func failedListingsRetrievalWithErrorResponse() async throws {
+        let networkService = StubNetworkService()
+        networkService.sendResponse = .failure(NetworkServiceError.failureResponse(RetrieveListingsErrorDTO.testData(error: .catalogueUnavailable)))
+
+        let sut = createSUT(networkService: networkService)
+
+        await #expect(throws: RetrieveListingsRepositoryError.catalogueUnavailable) {
             try await sut.retrieveListings()
         }
     }
@@ -155,15 +167,27 @@ struct LibraryRepositoryTests {
             .requestFailed,
             .unacceptableStatusCode(500),
             .decodingFailed
-          ] as [NetworkServiceError<Never>]
+          ] as [NetworkServiceError<RetrieveLoansErrorDTO>]
     )
-    func failedLoansRetrieval(networkError: NetworkServiceError<Never>) async throws {
+    func failedLoansRetrieval(networkError: NetworkServiceError<RetrieveLoansErrorDTO>) async throws {
         let networkService = StubNetworkService()
         networkService.sendResponse = .failure(networkError)
 
         let sut = createSUT(networkService: networkService)
 
         await #expect(throws: RetrieveLoansRepositoryError.failed) {
+            try await sut.retrieveLoans()
+        }
+    }
+
+    @Test("Given loans are retrieved, when the server responds with a membership expired failure, then a membership expired error is thrown")
+    func failedLoansRetrievalWithErrorResponse() async throws {
+        let networkService = StubNetworkService()
+        networkService.sendResponse = .failure(NetworkServiceError.failureResponse(RetrieveLoansErrorDTO.testData(error: .membershipExpired)))
+
+        let sut = createSUT(networkService: networkService)
+
+        await #expect(throws: RetrieveLoansRepositoryError.membershipExpired) {
             try await sut.retrieveLoans()
         }
     }

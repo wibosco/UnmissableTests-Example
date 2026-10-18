@@ -42,14 +42,26 @@ struct LoanServiceTests {
         #expect(loans == repositoryLoans)
     }
 
-    @Test("Given loans are retrieved, when that retrieval fails, then a failed error is thrown")
-    func failedLoansRetrieval() async throws {
+    @Test("Given loans are retrieved, when that retrieval fails, then the matching error is thrown",
+          arguments: zip(
+            [
+              .membershipExpired,
+              .failed
+            ] as [RetrieveLoansRepositoryError],
+            [
+              .membershipExpired,
+              .failed
+            ] as [LoansServiceError]
+          )
+    )
+    func failedLoansRetrieval(repositoryError: RetrieveLoansRepositoryError,
+                              expectedError: LoansServiceError) async throws {
         let repository = StubLibraryRepository()
-        repository.retrieveLoansResponse = .failure(.failed)
+        repository.retrieveLoansResponse = .failure(repositoryError)
 
         let sut = createSUT(repository: repository)
 
-        await #expect(throws: LoansServiceError.failed) {
+        await #expect(throws: expectedError) {
             try await sut.loans()
         }
     }

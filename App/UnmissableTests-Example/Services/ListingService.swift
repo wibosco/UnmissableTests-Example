@@ -12,6 +12,7 @@ protocol ListingService {
 }
 
 enum ListingsServiceError: Error, Equatable {
+    case catalogueUnavailable
     case failed
 }
 
@@ -38,6 +39,8 @@ final class DefaultListingService: ListingService {
             listings = try await repository.retrieveListings()
         } catch {
             switch error {
+            case .catalogueUnavailable:
+                throw .catalogueUnavailable
             case .failed:
                 throw .failed
             }
