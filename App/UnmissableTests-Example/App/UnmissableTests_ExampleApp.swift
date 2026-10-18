@@ -13,6 +13,8 @@ struct UnmissableTests_ExampleApp: App {
     @State private var listingsViewModel: ListingsViewModel
     @State private var loansViewModel: LoansViewModel
 
+    // MARK: - Init
+    
     init() {
         let session = DefaultMockServer.session()
         let networkService = DefaultNetworkService(session: session)
@@ -26,6 +28,8 @@ struct UnmissableTests_ExampleApp: App {
                                                                      loanService: loanService))
         _loansViewModel = State(initialValue: LoansViewModel(loanService: loanService))
     }
+    
+    // MARK: - Views
 
     var body: some Scene {
         WindowGroup {
