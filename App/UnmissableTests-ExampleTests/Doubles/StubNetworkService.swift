@@ -9,7 +9,7 @@ import Foundation
 
 @testable import UnmissableTests_Example
 
-final class StubNetworkService: NetworkService {
+nonisolated final class StubNetworkService: NetworkService {
     enum Event: Equatable {
         case send(URLRequest, Range<Int>)
     }
