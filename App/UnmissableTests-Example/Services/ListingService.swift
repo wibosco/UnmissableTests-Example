@@ -8,7 +8,11 @@
 import Foundation
 
 protocol ListingService {
-    func listings() async throws -> [Listing]
+    func listings() async throws(ListingServiceError) -> [Listing]
+}
+
+enum ListingServiceError: Error, Equatable {
+    case failed
 }
 
 final class DefaultListingService: ListingService {
@@ -23,12 +27,22 @@ final class DefaultListingService: ListingService {
     
     // MARK: - Listing
 
-    func listings() async throws -> [Listing] {
+    func listings() async throws(ListingServiceError) -> [Listing] {
         if let cachedListings {
             return cachedListings
         }
 
-        let listings = try await repository.retrieveListings()
+        let listings: [Listing]
+
+        do {
+            listings = try await repository.retrieveListings()
+        } catch {
+            switch error {
+            case .failed:
+                throw .failed
+            }
+        }
+
         cachedListings = listings
 
         return listings

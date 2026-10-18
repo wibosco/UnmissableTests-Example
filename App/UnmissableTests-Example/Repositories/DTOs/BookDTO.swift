@@ -14,14 +14,14 @@ nonisolated struct BookDTO: Decodable {
         case onLoanToYou = "on_loan_to_you"
     }
 
-    struct AuthorResponse: Decodable {
+    struct AuthorDTO: Decodable {
         let firstName: String
         let lastName: String
     }
 
     let id: String
     let title: String
-    let author: AuthorResponse
+    let author: AuthorDTO
     let isbn: String
     let coverImageName: String
     let availability: Status

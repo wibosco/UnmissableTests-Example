@@ -137,10 +137,13 @@ final class ListingsViewModel {
         do {
             try await loanService.borrowBook(book)
             await updateState()
-        } catch LoanError.loanLimitReached {
-            alert = .loanLimitReached
         } catch {
-            alert = .borrowFailed
+            switch error {
+            case .loanLimitReached:
+                alert = .loanLimitReached
+            case .failed:
+                alert = .borrowFailed
+            }
         }
     }
 
